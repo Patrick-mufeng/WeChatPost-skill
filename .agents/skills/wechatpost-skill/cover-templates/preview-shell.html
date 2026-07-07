@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeMD-AI-skill · {{TEMPLATE_NAME}} · 封面预览</title>
+<style>
+/* ═══════════════════════════════════════════
+   PREVIEW SHELL · 展示页外壳骨架
+   所有 {{...}} 占位符由模板填充
+   封面 CSS 注入在 <!-- COVER_CSS --> 处
+   封面 HTML 注入在 <!-- COVER_HTML_2x35 --> 和 <!-- COVER_HTML_1x1 --> 处
+   ═══════════════════════════════════════════ */
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* ── 页面基底 ── */
+:root{
+  --page-bg:  {{PAGE_BG}};
+  --page-orb1:{{PAGE_ORB1}};
+  --page-orb2:{{PAGE_ORB2}};
+  --accent:   {{ACCENT}};
+  --accent-dim:{{ACCENT_DIM}};
+  --text:     {{TEXT}};
+  --muted:    {{MUTED}};
+  --brand-gradient:{{BRAND_GRADIENT}};
+}
+body{
+  background:var(--page-bg);color:var(--text);
+  font-family:'Inter','PingFang SC',sans-serif;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;padding:48px 24px 64px;
+}
+.page-orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;}
+.page-orb-1{top:-10%;left:-5%;width:50vw;height:50vw;background:var(--page-orb1);}
+.page-orb-2{bottom:-15%;right:-8%;width:40vw;height:40vw;background:var(--page-orb2);}
+
+/* ── 主容器 ── */
+.app{position:relative;z-index:1;width:100%;max-width:1400px;}
+
+/* 顶部标题栏 */
+.header{text-align:center;margin-bottom:40px;}
+.header .brand{display:inline-flex;align-items:center;gap:10px;
+  font-size:13px;letter-spacing:3px;text-transform:uppercase;
+  background:var(--brand-gradient);-webkit-background-clip:text;background-clip:text;
+  color:transparent;font-weight:600;margin-bottom:8px;}
+.header .title{font-family:'Space Grotesk','Inter','PingFang SC',sans-serif;
+  font-size:clamp(20px,3vw,28px);font-weight:700;color:var(--text);letter-spacing:-.01em;margin-bottom:6px;}
+.header .sub{font-size:13px;color:var(--muted);}
+
+/* ── 双卡网格 ── */
+.cards-grid{display:grid;grid-template-columns:2.35fr 1fr;gap:28px;align-items:start;margin-bottom:40px;}
+.col{display:flex;flex-direction:column;align-items:center;gap:18px;}
+.col-label{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:8px;}
+.col-label::before,.col-label::after{content:'';display:block;width:24px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent-dim));}
+.col-label::after{background:linear-gradient(90deg,var(--accent-dim),transparent);}
+
+/* ── 封面卡片通用 ── */
+.cover-card{position:relative;overflow:hidden;width:100%;
+  box-shadow:0 20px 40px -16px rgba(0,0,0,.6),0 0 0 1px var(--accent-dim);
+  border-radius:24px;transition:transform .3s,box-shadow .3s;}
+.cover-card:hover{transform:translateY(-4px);
+  box-shadow:0 28px 48px -16px rgba(0,0,0,.7),0 0 0 1px var(--accent);}
+.cover-2x35{aspect-ratio:2.35/1;}
+.cover-1x1{aspect-ratio:1/1;}
+
+/* ── 下载按钮（使用 accent 变量，随模板变化） ── */
+.dl-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.dl-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:40px;
+  font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .25s;
+  border:1px solid var(--accent-dim);background:rgba(255,255,255,.03);color:var(--text);text-decoration:none;}
+.dl-btn:hover{background:rgba(255,255,255,.08);border-color:var(--accent);color:#fff;
+  box-shadow:0 0 20px var(--accent-dim);}
+.dl-btn:active{transform:scale(.96);}
+.dl-btn svg{width:13px;height:13px;}
+
+/* ── 底部 ── */
+.footer{text-align:center;padding-top:8px;
+  border-top:1px solid var(--accent-dim);width:100%;}
+.footer .tmpl{color:var(--accent);font-weight:600;letter-spacing:.5px;font-size:13px;}
+.footer .ver{color:var(--muted);font-size:12px;margin-left:6px;}
+
+/* ═══════════════════════════════════════════
+   封面 CSS 注入点
+   ═══════════════════════════════════════════ */
+<!-- COVER_CSS -->
+
+</style>
+</head>
+<body>
+
+<div class="page-orb page-orb-1"></div>
+<div class="page-orb page-orb-2"></div>
+
+<div class="app">
+
+  <div class="header">
+    <div class="brand">✦ WeMD-AI-skill ✦</div>
+    <div class="title">封面预览</div>
+    <div class="sub">{{TEMPLATE_NAME_CN}} · {{TEMPLATE_NAME_EN}} — 双尺寸并排预览</div>
+  </div>
+
+  <div class="cards-grid">
+
+    <!-- ═══ 左侧：2.35:1 ═══ -->
+    <div class="col">
+      <div class="col-label">公众号首图 · 2.35:1</div>
+      <div class="cover-card cover-2x35" id="cover-2x35">
+        <!-- COVER_HTML_2x35 -->
+      </div>
+    </div>
+
+    <!-- ═══ 右侧：1:1 ═══ -->
+    <div class="col">
+      <div class="col-label">朋友圈 · 1:1</div>
+      <div class="cover-card cover-1x1" id="cover-1x1">
+        <!-- COVER_HTML_1x1 -->
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="tmpl">{{TEMPLATE_EMOJI}} {{TEMPLATE_NAME_CN}} {{TEMPLATE_NAME_EN}}</span><span class="ver">· cover-designer v1.0</span>
+  </div>
+
+</div>
+
+</body>
+</html>

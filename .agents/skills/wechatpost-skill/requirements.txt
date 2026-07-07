@@ -1,0 +1,15 @@
+# WeChatPost Python 依赖
+# 安装：pip install -r requirements.txt
+
+# 视频转录核心
+yt-dlp
+openai-whisper
+
+# 视频解析 + 下载（parse-video-py）
+httpx
+aiohttp
+fake-useragent
+pyyaml
+parsel
+lxml
+jmespath
