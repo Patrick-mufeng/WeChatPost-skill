@@ -545,8 +545,7 @@ WECHAT_APPSECRET=your-appsecret-here
 
 | 包 | 用途 |
 |----|------|
-| `puppeteer` | 浏览器截图 |
-| `canvas` | PNG 合成 |
+| `puppeteer` | 浏览器截图 + 图片合并 |
 
 安装：`cd cover-templates && npm install`
 

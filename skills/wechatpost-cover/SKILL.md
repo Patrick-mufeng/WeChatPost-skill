@@ -17,7 +17,7 @@ description: "Design WeChat public account cover images as preview HTML. Use whe
 ## 前置依赖
 
 **HTML 预览**：无依赖，双击即开。
-**PNG 渲染**：需要 Node.js + puppeteer + canvas。如使用推送功能则必须渲染（push 需 `cover-combined.png`）。
+**PNG 渲染**：需要 Node.js + puppeteer。如使用推送功能则必须渲染（push 需 `cover-combined.png`）。
 
 ---
 
@@ -190,7 +190,7 @@ cover/
 ```bash
 # 在 cover-templates/ 目录下运行
 cd cover-templates
-npm install              # 首次：安装 puppeteer + canvas
+npm install              # 首次：安装 puppeteer
 node screenshot.js "<项目根目录>" "<文章文件夹名>"
 
 # 示例
@@ -201,7 +201,7 @@ node screenshot.js "D:/WeChatPost-skill" "DeepSeek价格战_2026-05-27"
 
 **前置依赖**（`wechatpost-init` Phase 1 已检查）：
 - Node.js ≥ 18
-- `npm install`（安装 puppeteer + canvas）
+- `npm install`（安装 puppeteer）
 
 ### 设计规范（三个维度）
 

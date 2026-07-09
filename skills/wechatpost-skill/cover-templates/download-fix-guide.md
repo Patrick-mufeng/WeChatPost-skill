@@ -25,4 +25,5 @@
 1. Puppeteer 打开 `preview.html`
 2. 在同一个 viewport 中取 `.cover-2x35` 和 `.cover-1x1` 的 `getBoundingClientRect`
 3. 分别 clip 截图保存为 `cover-2x35.png` 和 `cover-1x1.png`
-4. canvas 以 1:1 高度为基准，等比例缩放合并为 `cover-combined.png`
+4. Puppeteer 打开一个临时并排 HTML 页面，截图保存为 `cover-combined.png`
+5. 清理临时文件

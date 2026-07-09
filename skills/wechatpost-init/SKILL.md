@@ -60,7 +60,6 @@ lark-cli auth status     2>&1
 node --version           2>&1
 npm --version            2>&1
 node -e "require('puppeteer'); console.log('puppeteer OK')" 2>&1
-node -e "require('canvas'); console.log('canvas OK')" 2>&1
 
 # 微信公众号 API（可选，推送功能）
 grep -E "^WECHAT_APPID=|^WECHAT_APPSECRET=" .env 2>/dev/null || echo "WECHAT_NOT_CONFIGURED"
@@ -78,7 +77,6 @@ grep -E "^WECHAT_APPID=|^WECHAT_APPSECRET=" .env 2>/dev/null || echo "WECHAT_NOT
   □ lark-cli ✅（Patrick）
   □ Node.js 20.x ✅
   □ puppeteer ❌ → npm install（见下方）
-  □ canvas ❌ → npm install（见下方）
   □ 微信推送 ⚠️ 未配置 → 可选，见 Phase 3
 
 全部通过 ✅
@@ -93,10 +91,10 @@ grep -E "^WECHAT_APPID=|^WECHAT_APPSECRET=" .env 2>/dev/null || echo "WECHAT_NOT
 | Python 包 | `pip install -r requirements.txt` | 同上 | 同上 |
 | lark-cli | `npm install -g @larksuite/cli` | 同上 | 同上 |
 | Node.js | https://nodejs.org 下载 LTS | `brew install node` | `sudo apt install nodejs npm` |
-| puppeteer + canvas | `cd cover-templates && npm install` | 同上 | 同上 |
+| puppeteer | `cd cover-templates && npm install` | 同上 | 同上 |
 
 > `requirements.txt` 和安装脚本在 `wechatpost-skill/` 下，包含所有 Python 依赖。
-> `cover-templates/package.json` 管理 Node.js 依赖（puppeteer + canvas）。
+> `cover-templates/package.json` 管理 Node.js 依赖（puppeteer）。
 > lark-cli 未授权 → `lark-cli auth login --recommend`。
 
 ---
@@ -487,7 +485,6 @@ D) 其他（自己说）
 | lark-cli | `lark-cli auth status` |
 | Node.js | `node --version` |
 | puppeteer | `cd cover-templates && npm install` |
-| canvas | 同上 |
 | 微信推送 | `grep WECHAT_APPID .env`（可选） |
 
 ## 🆘 常见问题
@@ -511,7 +508,7 @@ D) 其他（自己说）
 ```
 🎉 WeChatPost 初始化完成！
 
-环境：Python ✅  ffmpeg ✅  Whisper ✅  yt-dlp ✅  lark-cli ✅  Node.js ✅  puppeteer ✅  canvas ✅
+环境：Python ✅  ffmpeg ✅  Whisper ✅  yt-dlp ✅  lark-cli ✅  Node.js ✅  puppeteer ✅
 微信推送：已配置 / 已跳过
 ASR：本地 Whisper tiny
 配图：已配置 / 已跳过

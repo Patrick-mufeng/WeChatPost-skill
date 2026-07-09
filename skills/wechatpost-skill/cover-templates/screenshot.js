@@ -2,10 +2,9 @@
 // 用法: node screenshot.js <项目根目录> <文章文件夹名>
 // 示例: node screenshot.js "D:/WeChatPost-skill" "DeepSeek价格战_2026-05-27"
 // 功能: 截取封面预览 HTML 中的 2.35:1 和 1:1 两张封面，合并为一张拼接图
-// 前置: npm install puppeteer canvas
+// 前置: npm install puppeteer
 
 const puppeteer = require('puppeteer');
-const { createCanvas, loadImage } = require('canvas');
 const path = require('path');
 const fs = require('fs');
 
@@ -65,33 +64,39 @@ function fail(msg) {
     console.log('✅ cover-2x35.png (' + Math.round(rects.r235.w) + 'x' + Math.round(rects.r235.h) + ')');
     await page.screenshot({ path: path.join(outDir, 'cover-1x1.png'),  clip: rects.r11 });
     console.log('✅ cover-1x1.png  (' + Math.round(rects.r11.w) + 'x' + Math.round(rects.r11.h) + ')');
+
+    // 合并 — 用 puppeteer 打开一个并排显示两张截图的临时 HTML 页面截图
+    const w235 = Math.round(rects.r235.w);
+    const h235 = Math.round(rects.r235.h);
+    const w11  = Math.round(rects.r11.w);
+    const h11  = Math.round(rects.r11.h);
+    const targetH = h11;                    // 以 1:1 高度为基准
+    const scale = targetH / h235;
+    const w1 = Math.round(w235 * scale);    // 2.35:1 等比例缩放后的宽度
+    const w2 = w11;                         // 1:1 宽度
+    const combinedW = w1 + w2;
+
+    const mergeHTML = `<!DOCTYPE html>
+<html><head><style>
+  *{margin:0;padding:0} body{background:#0a0a0a;display:flex;width:${combinedW}px;height:${targetH}px}
+  img{display:block;height:${targetH}px}
+</style></head><body>
+  <img src="file:///${encodeURI(path.join(outDir, 'cover-2x35.png').replace(/\\/g, '/'))}" style="width:${w1}px">
+  <img src="file:///${encodeURI(path.join(outDir, 'cover-1x1.png').replace(/\\/g, '/'))}" style="width:${w2}px">
+</body></html>`;
+
+    const mergePath = path.join(outDir, '_merge.html');
+    fs.writeFileSync(mergePath, mergeHTML, 'utf-8');
+
+    await page.setViewport({ width: combinedW, height: targetH, deviceScaleFactor: 1 });
+    await page.goto('file:///' + encodeURI(mergePath.replace(/\\/g, '/')), { waitUntil: 'load', timeout: 10000 });
+    await page.screenshot({ path: path.join(outDir, 'cover-combined.png') });
+    fs.unlinkSync(mergePath);  // 清理临时文件
+    console.log('✅ cover-combined.png (' + combinedW + 'x' + targetH + ', side-by-side)');
   } catch (err) {
     fail('截图失败: ' + err.message);
   } finally {
     if (browser) await browser.close();
-  }
-
-  // Canvas 合并 — 以 1:1 高度为基准，2.35:1 等比例缩放
-  try {
-    const img1 = await loadImage(path.join(outDir, 'cover-2x35.png'));
-    const img2 = await loadImage(path.join(outDir, 'cover-1x1.png'));
-
-    const targetH = img2.naturalHeight;
-    const scale = targetH / img1.naturalHeight;
-    const w1 = Math.round(img1.naturalWidth * scale);
-    const w2 = img2.naturalWidth;
-
-    const canvas = createCanvas(w1 + w2, targetH);
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#0a0a0a';
-    ctx.fillRect(0, 0, w1 + w2, targetH);
-    ctx.drawImage(img1, 0, 0, w1, targetH);
-    ctx.drawImage(img2, w1, 0, w2, targetH);
-
-    fs.writeFileSync(path.join(outDir, 'cover-combined.png'), canvas.toBuffer('image/png'));
-    console.log('✅ cover-combined.png (' + (w1 + w2) + 'x' + targetH + ', side-by-side)');
-  } catch (err) {
-    fail('合并图片失败: ' + err.message);
   }
 
   console.log('📁 Output: ' + outDir);
