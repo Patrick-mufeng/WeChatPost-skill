@@ -27,11 +27,9 @@ Thumbs.db
 .idea/
 
 # 飞书 lark-* skills（安装时自动下载，不提交）
+skills/lark-*
 .agents/skills/lark-*
-.trae/
-.trae/skills/lark-*
 
 # 非 WeChatPost 的遗留文件
-/skills/
 /skills-lock.json
 /.trae/
