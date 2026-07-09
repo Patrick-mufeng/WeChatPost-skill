@@ -60,9 +60,9 @@ function fail(msg) {
       fail('.cover-2x35 or .cover-1x1 element not found in preview.html');
     }
 
-    await page.screenshot({ path: path.join(outDir, 'cover-2x35.png'), clip: rects.r235 });
+    await page.screenshot({ path: path.join(outDir, 'cover-2x35.png'), clip: { x: Math.round(rects.r235.x), y: Math.round(rects.r235.y), width: Math.round(rects.r235.w), height: Math.round(rects.r235.h) } });
     console.log('✅ cover-2x35.png (' + Math.round(rects.r235.w) + 'x' + Math.round(rects.r235.h) + ')');
-    await page.screenshot({ path: path.join(outDir, 'cover-1x1.png'),  clip: rects.r11 });
+    await page.screenshot({ path: path.join(outDir, 'cover-1x1.png'),  clip: { x: Math.round(rects.r11.x), y: Math.round(rects.r11.y), width: Math.round(rects.r11.w), height: Math.round(rects.r11.h) } });
     console.log('✅ cover-1x1.png  (' + Math.round(rects.r11.w) + 'x' + Math.round(rects.r11.h) + ')');
 
     // 合并 — 用 puppeteer 打开一个并排显示两张截图的临时 HTML 页面截图
