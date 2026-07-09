@@ -24,7 +24,7 @@ Phase 4: ASR 引擎选择（Whisper/火山）
   ↓
 Phase 5: 飞书表格验证
   ↓
-Phase 6: 风格设定（口头描述/提供文章/跳过） + 创建项目文件
+Phase 6: 风格设定 + 创建项目文件（outputs/ + style_guide.md + WORKFLOW.md）
   ↓
 Phase 7: 完成提示
 ```
@@ -428,6 +428,36 @@ D) 其他（自己说）
 ### 5C · 跳过
 
 直接创建 `style_guide.md` 空模板（所有字段留空），后续自动学习填充。
+
+### 5.0 创建项目脚手架
+
+无论选 A/B/C，在 Phase 5 完成后，先创建项目目录结构：
+
+```bash
+mkdir -p outputs
+```
+
+并在 `outputs/` 下创建说明文件：
+
+```markdown
+# 产出目录
+
+每篇文章生成在 `outputs/{标题}_{YYYY-MM-DD}/` 下。
+
+完整目录结构：
+
+outputs/{标题}_{YYYY-MM-DD}/
+├── metadata.json              ← 视频元信息
+├── transcript_raw.txt         ← Whisper 原始转录
+├── transcript_corrected.txt   ← LLM 纠错后文案
+└── article/
+    ├── draft.md               ← AI 初稿
+    ├── final.md               ← 终稿
+    ├── output.html            ← 排版 HTML
+    ├── output-preview.html    ← 手机预览
+    ├── illustrations/         ← 正文配图
+    └── cover/                 ← 封面图片
+```
 
 ### 5.1 创建 WORKFLOW.md
 
