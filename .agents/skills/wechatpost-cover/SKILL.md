@@ -17,7 +17,7 @@ description: "Design WeChat public account cover images as preview HTML. Use whe
 ## 前置依赖
 
 **HTML 预览**：无依赖，双击即开。
-**PNG 渲染**（可选）：需要 Node.js + puppeteer + canvas。
+**PNG 渲染**：需要 Node.js + puppeteer + canvas。如使用推送功能则必须渲染（push 需 `cover-combined.png`）。
 
 ---
 
@@ -30,13 +30,15 @@ Phase 0: 读取 final.md
   ↓
 Phase 1: 三维分析（情绪/领域/调性）
   ↓
-Phase 2: 推荐 3 个模板 → 用户选择
+Phase 2: 设计方式选择（A模板 / B描述 / C AI自主）
   ↓
 Phase 3: 提取封面文案（标题/描述/标签）
   ↓
 Phase 4: 生成预览 HTML
   ↓
 Phase 5: 改稿循环（最多 3 轮）
+  ↓
+Phase 6: 自检
 ```
 
 ---
@@ -65,9 +67,23 @@ Phase 5: 改稿循环（最多 3 轮）
 
 ---
 
-## Phase 2 · 风格推荐
+## Phase 2 · 设计方式选择
 
-从 40 套模板中按情绪+领域推荐 3 个：
+做完三维分析后，先让用户选择设计方式：
+
+```
+🎨 封面设计方式：
+
+A. 推荐模板 — 我根据文章分析推荐 3 个模板，你选一个
+B. 自己描述 — 你来描述想要的风格/配色/感觉
+C. AI 自主设计 — 不套模板，根据设计规范全新创作（要有设计感）
+
+选 A / B / C？
+```
+
+### A. 推荐模板
+
+从 40 套模板中按 Phase 1 的情绪+领域推荐 3 个：
 
 ```
 根据文章分析：
@@ -76,12 +92,37 @@ Phase 5: 改稿循环（最多 3 轮）
 
 | # | 模板 | 色板 | 理由 |
 |---|------|------|------|
-| A | 赛博霓虹 | 暗底+青品红辉光 | 科技感最强 |
-| B | 工程蓝图 | 蓝图青蓝调 | 技术教程感 |
-| C | 玻璃态 | 毛玻璃+柔和渐变 | 现代SaaS感 |
+| 1 | 赛博霓虹 | 暗底+青品红辉光 | 科技感最强 |
+| 2 | 工程蓝图 | 蓝图青蓝调 | 技术教程感 |
+| 3 | 玻璃态 | 毛玻璃+柔和渐变 | 现代SaaS感 |
 
-选 A/B/C，或描述想要的感觉。
+选 1/2/3？或输入"换一批"重推。
 ```
+
+用户选完后直接进入 Phase 3（提取封面文案），后续按所选模板生成。
+
+### B. 自己描述
+
+让用户自由描述想要的风格：
+
+```
+💬 说说你想要的封面感觉：
+（例："黑白极简，大字标题，不要装饰" / "暖色调，手绘感，轻松一点"）
+```
+
+收到描述后，直接进入 Phase 3，根据描述自由设计封面 HTML（不强制套模板，但仍需遵守 Phase 4 的设计规范：60-30-10 配色、≤4 色、对比度 ≥ 4.5:1、标题 ≥ 48px 等）。
+
+### C. AI 自主设计
+
+不推荐模板、不让用户描述，AI 根据 Phase 1 的分析结果 + 设计规范自主创作：
+
+**约束**：
+- 不套用任何 cover-templates/ 中的模板
+- 必须遵守 `design-principles.md` 的规范：60-30-10 法则、≤4 色、字体层级（H1≥48px / H2≥24px / 正文≥20px）、留白 ≥ 35%
+- 目标：**有设计感** — 配色有辨识度、排版有节奏、不是"安全但平庸"的通用样式
+- 给出设计理念一句话（如"用不对称构图+单一强调色制造张力"）
+
+直接进入 Phase 3，无需用户进一步确认。
 
 ### 40 套模板速查
 
@@ -129,9 +170,10 @@ Phase 5: 改稿循环（最多 3 轮）
 
 ```
 cover/
-├── preview.html      ← 2.35:1 + 1:1 双版预览
-├── cover-2x35.png    ← （需 Node.js，可选）
-└── cover-1x1.png     ← （同上）
+├── preview.html        ← 2.35:1 + 1:1 双版预览
+├── cover-2x35.png      ← （screenshot.js 渲染）
+├── cover-1x1.png       ← （同上）
+└── cover-combined.png  ← （并排拼接预览）
 ```
 
 ### 预览 HTML 规范
@@ -140,6 +182,26 @@ cover/
 - 所有 CSS 内联，无外部依赖
 - 公众号标准尺寸：2.35:1 = 900×383，1:1 = 400×400
 - 底部品牌栏：`<footer>` 标注 "WeChatPost · Design"，居中、字号 12px
+
+### PNG 渲染（截图）
+
+预览 HTML 生成后，用 `screenshot.js` 将双版封面渲染为 PNG：
+
+```bash
+# 在 cover-templates/ 目录下运行
+cd cover-templates
+npm install              # 首次：安装 puppeteer + canvas
+node screenshot.js "<项目根目录>" "<文章文件夹名>"
+
+# 示例
+node screenshot.js "D:/WeChatPost-skill" "DeepSeek价格战_2026-05-27"
+```
+
+产出 `cover-2x35.png` + `cover-1x1.png` + `cover-combined.png`（两张并排预览）。
+
+**前置依赖**（`wechatpost-init` Phase 1 已检查）：
+- Node.js ≥ 18
+- `npm install`（安装 puppeteer + canvas）
 
 ### 设计规范（三个维度）
 
@@ -162,7 +224,7 @@ cover/
 
 - 改文案 → 更新标题/描述/标签 → 刷新 HTML
 - 改配色 → 微调
-- "换一个风格" → 回到 Phase 2
+- "换一个风格" → 回到 Phase 2（重新选 A/B/C）
 - 最多 3 轮
 
 ---

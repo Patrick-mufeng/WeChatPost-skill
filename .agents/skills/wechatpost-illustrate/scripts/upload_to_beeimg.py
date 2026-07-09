@@ -33,7 +33,6 @@ def load_config() -> dict:
     # 先尝试加载 .env 文件
     candidates = [
         Path.cwd() / ".env",
-        Path.cwd() / ".grindraft" / "config.env",
         Path(__file__).resolve().parent / ".env",
     ]
     for env_file in candidates:
@@ -83,7 +82,7 @@ def upload_image(file_path: str, *,
     """
     # 参数校验
     if not token:
-        return {"success": False, "error": "BEEIMG_TOKEN 未配置。请在 .env 或 .grindraft/config.env 中设置 BEEIMG_TOKEN=你的Token"}
+        return {"success": False, "error": "BEEIMG_TOKEN 未配置。请在项目根目录 .env 中设置 BEEIMG_TOKEN=你的Token"}
 
     # 自动获取储存策略（如果未指定）
     if not strategy_id:

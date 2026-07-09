@@ -488,10 +488,9 @@ async def main_async(args: argparse.Namespace):
 
     if not api_key or api_key in ("sk-your-api-key-here", "sk-YOUR_API_KEY"):
         print("\n❌ 错误: 请先配置 API Key!")
-        print("  方法1: 在项目根目录 .grindraft/config.env 中填入 YUNWU_API_KEY=sk-xxx（推荐）")
-        print("  方法2: 在项目根目录 .env 或脚本目录 .env 中填入 YUNWU_API_KEY=sk-xxx")
-        print("  方法3: 设置环境变量 YUNWU_API_KEY")
-        print("  方法4: 使用 --key 参数: python mitu_generate.py --key sk-xxx \"prompt\"")
+        print("  方法1: 在项目根目录 .env 中填入 YUNWU_API_KEY=sk-xxx（推荐）")
+        print("  方法2: 设置环境变量 YUNWU_API_KEY")
+        print("  方法3: 使用 --key 参数: python mitu_generate.py --key sk-xxx \"prompt\"")
         sys.exit(1)
 
     client = MituClient(api_key=api_key, base_url=base_url)

@@ -36,7 +36,6 @@ except ImportError:
 def load_config() -> dict:
     candidates = [
         Path.cwd() / ".env",
-        Path.cwd() / ".grindraft" / "config.env",
         Path(__file__).resolve().parent / ".env",
     ]
     for env_file in candidates:

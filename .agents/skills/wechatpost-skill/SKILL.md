@@ -5,9 +5,9 @@ description: "Use when processing video links into WeChat public account article
 
 # WeChatPost — 视频转公众号全流程
 
-> 🎯 **一条龙：飞书表格 → 视频转录 → AI写稿 → 配图 → 封面 → 排版 → 飞书登记**
+> 🎯 **一条龙：飞书表格 → 视频转录 → AI写稿 → 配图 → 封面 → 排版 → 推送 → 飞书登记**
 >
-> 主路由控制全流程，子 skill 独立干活。转录脚本在 `scripts/` 下，写作/配图/封面/排版各路由到 `skills/wechatpost-*/`。
+> 主路由控制全流程，子 skill 独立干活。转录脚本在 `scripts/` 下，写作/配图/封面/排版/推送各路由到 `skills/wechatpost-*/`。
 
 ---
 
@@ -24,7 +24,7 @@ wechatpost-skill/
 │   └── writing-principles.md    ← 写作原则（五种原型 + 四层去AI味）
 └── （子 skill 独立部署在 .agents/skills/ 下：
       wechatpost-write / wechatpost-illustrate / wechatpost-cover
-      wechatpost-format / wechatpost-publish / wechatpost-status）
+      wechatpost-format / wechatpost-push / wechatpost-publish / wechatpost-status）
 ```
 
 ---
@@ -33,15 +33,16 @@ wechatpost-skill/
 
 | 用户说 | 路由到 | 前置条件 |
 |--------|--------|----------|
-| "初始化" / "init" / "首次使用" / "配置" | `wechatpost-init` | 无（这是入口，其他 skill 的前置） |
+| "初始化" / "init" / "首次使用" / "开始使用" / "配置" | `wechatpost-init` | 无（这是入口，其他 skill 的前置） |
 | "处理视频" / "转录" / "视频转文案" | **主路由自己处理** | 飞书表格有 待处理 记录 |
 | "写文章" / "写初稿" / "write" / "出稿" | `wechatpost-write` | `transcript_corrected.txt` 存在 |
-| "配图" / "插图" / "illustrate" | `wechatpost-illustrate` | `final.md` 存在 |
-| "做封面" / "封面" / "cover" | `wechatpost-cover` | 有终稿 |
-| "排版" / "format" / "转 HTML" | `wechatpost-format` | `final.md` + 封面存在 |
-| "已发布" / "发布登记" / "publish" / "发布链接" | `wechatpost-publish` | 排版完成 |
-| "看板" / "状态" / "status" / "进度" | `wechatpost-status` | 任意时刻 |
-| "一条龙" / "全部做完" / "全流程" | 主路由串联：转录→写稿→配图→封面→排版→登记 | 飞书表格有待处理记录 |
+| "配图" / "插图" / "做插图" / "illustrate" / "正文配图" | `wechatpost-illustrate` | `final.md` 存在 |
+| "做封面" / "封面" / "cover" / "公众号封面" / "设计封面" | `wechatpost-cover` | 有终稿 |
+| "排版" / "format" / "转HTML" / "转公众号" / "公众号排版" | `wechatpost-format` | `final.md` 存在（封面建议先做，非强制） |
+| "推送" / "push" / "推到公众号" / "推送到公众号" | `wechatpost-push` | `output.html` + `cover-combined.png` 存在 |
+| "已发布" / "发布登记" / "publish" / "发布链接" / "发出去了" | `wechatpost-publish` | 排版完成 |
+| "看板" / "状态" / "status" / "进度" / "到哪了" / "今天干什么" | `wechatpost-status` | 任意时刻 |
+| "一条龙" / "全部做完" / "全流程" | 主路由串联：转录→写稿→配图→封面→排版→推送→登记 | 飞书表格有待处理记录 |
 
 ---
 
@@ -59,12 +60,17 @@ WeChatPost-skill/
 │       └── article/                 # 🆕 写作产出
 │           ├── draft.md             # AI 初稿（含标题候选+简介）
 │           ├── final.md             # 终稿（去 AI 味后）
+│           ├── output.html          # 排版 HTML（公众号粘贴用）
+│           ├── output-preview.html  # 手机预览 + 一键复制
 │           ├── illustrations/       # 正文配图
+│           │   ├── shot-list.md     # 配图分镜计划
+│           │   ├── uploaded-keys.json # 图床上传记录
 │           │   └── 01-{主题}.png
 │           ├── cover/               # 封面
+│           │   ├── preview.html     # 双版预览
 │           │   ├── cover-2x35.png
-│           │   └── cover-1x1.png
-│           └── output.html          # 排版 HTML
+│           │   ├── cover-1x1.png
+│           │   └── cover-combined.png # 并排预览
 └── .agents/skills/                  # Skill 安装目录
 ```
 
@@ -76,11 +82,13 @@ WeChatPost-skill/
 
 | 子 skill | 自检内容 |
 |----------|----------|
+| 转录（主路由） | re-read transcript_corrected.txt ≥ 500 字节 + 飞书状态已更新 |
 | `wechatpost-write` | re-read draft.md ≥ 500字节 + 含标题候选 + 含正文 |
 | `wechatpost-illustrate` | re-read shot-list.md + 每张 PNG 存在 + 图床 URL + final.md 有引用 |
 | `wechatpost-cover` | re-read preview.html + 双版预览 + CSS 内联 |
 | `wechatpost-format` | re-read output.html ≥ 1000字节 + 无禁用标签 + 配图内联 |
-| `wechatpost-publish` | re-read 飞书记录：发布链接/时间/状态 全部写入 |
+| `wechatpost-push` | re-read 推送结果：media_id 非空 + 飞书备注已写入 |
+| `wechatpost-publish` | re-read 飞书记录：发布链接/时间/状态 全部写入 + beeimg 图片已删除（无配图则跳过） |
 
 **失败处理**：缺失 → 立即重写 → re-read 确认 → 仍不通过 → 输出 `❌ 自检失败，请手动检查`。
 
@@ -125,7 +133,7 @@ WeChatPost-skill/
 
 下一步：
 - "写文章" → 将文案改写成公众号初稿
-- "一条龙" → 自动串联写稿→配图→封面→排版
+- "一条龙" → 自动串联写稿→配图→封面→排版→推送→登记
 ```
 
 ---
@@ -225,10 +233,10 @@ lark-cli base +record-batch-update \
 当用户说"一条龙"时，按顺序执行：
 
 ```
-读取待处理 → 转录 → 写初稿 → 配图 → 封面 → 排版 → 发布登记 → 更新状态
+读取待处理 → 转录 → 写初稿 → 配图 → 封面 → 排版 → 推送 → 发布登记 → 更新状态
 ```
 
-每个阶段完成后自动进入下一阶段，遇到失败记录到备注并继续下一条。
+每个阶段完成后自动进入下一阶段，遇到失败记录到飞书备注并继续处理下一条视频（并非跳过当前文章的其他阶段，而是当前文章标记失败后继续处理队列中的下一篇）。
 
 详细流程见各子 skill：
 - 写初稿：`skills/wechatpost-write/SKILL.md`

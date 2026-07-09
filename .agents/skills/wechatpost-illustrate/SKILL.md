@@ -75,6 +75,20 @@ Phase 7: 自检
 
 提炼：核心观点、认知转折点、适合用图解释的内容。
 
+### 配色分析
+
+根据文章情绪基调选择色板（参考 `references/style-dna.md` 颜色章节）：
+
+| 文章情绪 | 色板 |
+|----------|------|
+| 数据多、逻辑链、技术术语 | **冷峻** · 蓝灰调 |
+| 个人故事、情感表达、生活场景 | **温暖** · 暖调 |
+| 观点鲜明、号召行动、对比冲突 | **激昂** · 对比调 |
+| 幽默、自嘲、年轻化语言 | **轻松** · 明亮调 |
+| 权威引用、深度分析、正式语气 | **严肃** · 大地调 |
+
+在 shot list 开头标注选定的色板名称，供后续 prompt 构建使用。
+
 ---
 
 ## Phase 2 · 配图策略（shot list）
@@ -83,6 +97,8 @@ Phase 7: 自检
 
 ```
 ## 配图策略
+
+配色：{色板名称}（如 冷峻·蓝灰调）
 
 | # | 位置 | 主题 | 结构类型 | 小霓动作 |
 |---|------|------|----------|----------|
@@ -111,8 +127,9 @@ Phase 7: 自检
 
 每张图按 `references/prompt-template.md` 构建英文 prompt。必须包含：
 - 16:9 horizontal Chinese article illustration
-- Pure white background, black hand-drawn line art
-- 小霓 IP（cyber-girl operator, geometric bob, white dot eyes）
+- Pure white background, black hand-drawn line art with flat color fills（填色本风格平涂）
+- 小霓 IP（固定配色：头发 #2c3e6b、皮肤 #f5efe6、工装 #8a9b8e、护目镜 #b0b0b0）
+- 其余元素按 Phase 1 选定的情绪色板平涂上色
 - 大量留白（≥35%）
 
 ### 4.2 调用生图 API

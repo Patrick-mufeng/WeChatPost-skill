@@ -1,0 +1,13 @@
+{
+  "name": "wechatpost-cover-screenshot",
+  "version": "1.0.0",
+  "description": "WeChatPost 封面截图工具 — 将 preview.html 渲染为 PNG 封面图",
+  "private": true,
+  "scripts": {
+    "screenshot": "node screenshot.js"
+  },
+  "dependencies": {
+    "puppeteer": "^22.0.0",
+    "canvas": "^2.11.0"
+  }
+}

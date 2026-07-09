@@ -44,7 +44,7 @@ def resolve_size(ratio: str, megapixels: str | int) -> str:
 
 def _load_env():
     """从 .env 文件加载配置。
-    加载顺序：根目录 .env → .grindraft/config.env → 脚本目录 .env
+    加载顺序：脚本目录 .env → 根目录 .env
     规则：后加载覆盖先加载；环境变量（脚本运行前已设置）始终保持最高优先级，不会被任何文件覆盖。
     """
     # 记录脚本运行前已存在的环境变量，这些绝不被覆盖
@@ -52,7 +52,6 @@ def _load_env():
 
     candidates = [
         Path.cwd() / ".env",                              # 运行脚本的当前目录
-        Path.cwd() / ".grindraft" / "config.env",          # grindraft 项目配置（后者覆盖）
         Path(__file__).resolve().parent / ".env",          # 脚本所在目录（最高文件优先级）
     ]
     for env_file in candidates:

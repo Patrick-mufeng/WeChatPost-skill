@@ -6,10 +6,10 @@
 Generate one standalone 16:9 horizontal Chinese article illustration.
 
 Visual DNA:
-Pure white background. Minimalist black hand-drawn line art. Slightly wobbly pen lines. Lots of empty white space. Sparse red/orange/blue handwritten Chinese annotations. Clean absurd product-sketch feeling. No gradients, no shadows, no paper texture, no complex background, no commercial vector style, no PPT infographic look, no cute mascot poster, no children's illustration, no realistic UI.
+Pure white background. Minimalist hand-drawn black line art with flat color fills (flat cel-shading coloring-book style — no gradients, no shadows, no highlights, no paper texture). Slightly wobbly organic pen lines, not vector-clean. Lots of empty white space. Sparse red/orange handwritten Chinese annotations. Clean absurd product-sketch feeling. No complex background, no commercial vector style, no PPT infographic look, no cute mascot poster, no children's illustration, no realistic UI. Preserve at least 35% blank white space.
 
-Recurring IP character required:
-小霓, a minimalist hand-drawn female cyber operator character with geometric bob haircut, thin antenna-like hair details, white dot eyes, slender angular body in a minimalist tech-vest, calm analytical expression. 小霓 must perform the core conceptual action, not decorate the scene. Make 小霓 serious, deadpan, slightly detached, and competent-not-cute.
+Recurring IP character 小霓 — fixed colors, never change:
+A slender angular female cyber operator with geometric bob haircut (flat dark indigo #2c3e6b), porcelain skin (#f5efe6), white dot eyes (no pupils), calm detached expression. Wearing an oversized minimalist sage-green tech vest (#8a9b8e). Silver-gray data goggles pushed up on forehead (#b0b0b0). Thin antenna-like hair details same as hair color. Thin dark gray (#555) joint lines on elbows. 小霓 must perform the core conceptual action, not decorate the scene. Make 小霓 serious, deadpan, slightly detached, and competent-not-cute.
 
 Theme:
 {正文配图主题}
@@ -29,8 +29,14 @@ Suggested elements:
 Chinese handwritten labels:
 {标注词1} / {标注词2} / {标注词3} / {标注词4} / {可选标注词5}
 
-Color use:
-Black for main line art and 小霓. Orange for main flow/path/arrows. Red only for key warnings/problems/results. Blue only for secondary notes or feedback/system state.
+Color rules:
+- 小霓 always uses her fixed colors above — never change across illustrations.
+- Other elements (objects, props, pipes, panels, backgrounds) use flat fills from the article mood palette: {色板主色} / {色板辅色} / {色板底色}. All flat, no gradients, no shading.
+- Black (#333) for all line art, outlines, main text, and 小霓's contour lines.
+- Red (#c75b3a) only for key warnings, critical annotations, results.
+- Orange (#d4786e) only for main flow paths, arrows, data direction lines.
+- Blue (#4a7d9a) only for secondary notes, system state — optional, not every image needs it.
+- All color fills are flat cel-shading. No highlights, no rim light, no texture.
 
 Constraints:
 One image explains only one core structure. Keep the main subject around 40%-60% of the canvas. Preserve at least 35% blank white space. Use at most 5-8 short handwritten Chinese labels. Do not write a title in the top-left corner. Do not write the structure type on the image. Do not make it a formal diagram, course slide, or dense explainer. Do not copy prior examples or reuse known case compositions unless explicitly requested; invent a fresh visual metaphor for this specific article. It should be clear but not instructional, interesting but not childish, strange but clean.
