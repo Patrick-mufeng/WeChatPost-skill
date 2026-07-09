@@ -1,29 +1,30 @@
-# WeChatPost — 视频转公众号全流程
+# WeChatPost — 视频转公众号全流程 / Video to WeChat Article Pipeline
 
 > 🎯 **一条龙：飞书表格 → 视频转录 → AI 写稿 → 配图 → 封面 → 排版 → 推送 → 飞书登记**
+> *One-click pipeline: Feishu table → transcription → AI writing → illustration → cover → formatting → push → publish*
 
 WeChatPost 是一套 AI Agent 驱动的公众号内容生产流水线。把视频链接扔进飞书表格，说一句「一条龙」，8 个阶段自动串联，产出可直接发布到微信公众号的完整图文。
 
+*WeChatPost is an AI agent-driven content production pipeline. Drop a video link into a Feishu table, say "一条龙" (one dragon), and 8 stages execute automatically — producing a complete WeChat Official Account article ready for publishing.*
+
 ---
 
-## 安装
+## 安装 / Installation
 
-### 通过 GitHub 链接安装（推荐）
-
-WeChatPost 使用标准 `skills/` 目录结构，兼容主流 AI 工具：
+### GitHub 安装（推荐） / GitHub Install (Recommended)
 
 ```bash
 # ZCode
-zcode skill install https://github.com/你的用户名/WeChatPost-skill
+zcode skill install https://github.com/Patrick-mufeng/WeChatPost-skill
 
 # Claude Code
-claude mcp add https://github.com/你的用户名/WeChatPost-skill
+claude mcp add https://github.com/Patrick-mufeng/WeChatPost-skill
 ```
 
-### 手动安装
+### 手动安装 / Manual Install
 
 ```bash
-git clone https://github.com/你的用户名/WeChatPost-skill.git
+git clone https://github.com/Patrick-mufeng/WeChatPost-skill.git
 cd WeChatPost-skill
 
 # ZCode
@@ -32,13 +33,15 @@ cp -r skills/* .agents/skills/
 # Claude Code
 cp -r skills/* ~/.claude/skills/
 
-# 其他 AI 工具
-# 将 skills/ 目录配置到工具的 skill 加载路径
+# Other AI tools
+# Point your tool's skill directory to skills/
 ```
 
-### 安装后
+### 安装后 / After Install
 
 在项目目录下说「初始化」，按照引导完成环境配置：
+
+*Say "初始化" (initialize) in your project directory to set up:*
 
 ```
 初始化
@@ -46,7 +49,7 @@ cp -r skills/* ~/.claude/skills/
 
 ---
 
-## 目录
+## 目录 / Contents
 
 - [核心能力](#核心能力)
 - [项目架构](#项目架构)
@@ -70,7 +73,7 @@ cp -r skills/* ~/.claude/skills/
 
 ---
 
-## 核心能力
+## 核心能力 / Core Capabilities
 
 | 能力 | 说明 |
 |------|------|
@@ -85,7 +88,7 @@ cp -r skills/* ~/.claude/skills/
 
 ---
 
-## 项目架构
+## 项目架构 / Architecture
 
 ```
 WeChatPost-skill/
@@ -145,7 +148,7 @@ WeChatPost-skill/
 
 ---
 
-## 完整工作流
+## 完整工作流 / Complete Workflow
 
 ```
 飞书表格（待处理）
@@ -184,7 +187,7 @@ WeChatPost-skill/
 
 ---
 
-## 各 Skill 详解
+## 各 Skill 详解 / Skill Details
 
 ### ① wechatpost-init — 项目初始化
 
@@ -449,7 +452,7 @@ WeChatPost-skill/
 
 ---
 
-## 命令速查
+## 命令速查 / Command Reference
 
 | 你说 | 做什么 |
 |------|--------|
@@ -466,7 +469,7 @@ WeChatPost-skill/
 
 ---
 
-## 产出目录结构
+## 产出目录结构 / Output Directory Structure
 
 ```
 outputs/{标题}_{YYYY-MM-DD}/
@@ -491,9 +494,9 @@ outputs/{标题}_{YYYY-MM-DD}/
 
 ---
 
-## 环境配置
+## 环境配置 / Environment Setup
 
-### 必需的 API / 工具
+### 必需的 API / 工具 / Required APIs & Tools
 
 | 配置项 | 用途 | 获取方式 |
 |--------|------|----------|
@@ -503,7 +506,7 @@ outputs/{标题}_{YYYY-MM-DD}/
 | `WECHAT_APPSECRET` | 同上 | 同上 |
 | 飞书多维表格 | 任务队列与状态追踪 | 项目内置 Base Token |
 
-### `.env` 文件模板
+### `.env` 文件模板 / .env Template
 
 ```env
 # ── 生图 API（云雾）──
@@ -524,7 +527,7 @@ WECHAT_APPSECRET=your-appsecret-here
 
 ---
 
-## 依赖清单
+## 依赖清单 / Dependencies
 
 ### Python（转录 + 配图）
 
@@ -556,7 +559,7 @@ WECHAT_APPSECRET=your-appsecret-here
 
 ---
 
-## 设计哲学
+## 设计哲学 / Design Philosophy
 
 ### 写作：克制但高点击
 
@@ -580,7 +583,7 @@ WECHAT_APPSECRET=your-appsecret-here
 
 ---
 
-## 常见问题
+## 常见问题 / FAQ
 
 | 问题 | 解决 |
 |------|------|
