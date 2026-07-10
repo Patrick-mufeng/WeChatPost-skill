@@ -69,7 +69,7 @@ grep -E "^WECHAT_APPID=|^WECHAT_APPSECRET=" .env 2>/dev/null || echo "MISSING"
 📤 推送到公众号草稿箱
 
 文章：{title}
-作者：{author}
+作者：{author}（来自 .env 的 WECHAT_AUTHOR，未配置则使用视频原作者）
 封面：cover-combined.png
 
 将推送到公众号草稿箱，不会自动群发。确认？(Y/n)
@@ -88,11 +88,12 @@ python scripts/wechat_push.py "outputs/{标题}_{日期}/article"
 ### 脚本内部流程
 
 ```
-① 从 .env 读取 WECHAT_APPID + WECHAT_APPSECRET
-② 从 final.md frontmatter 读取 title / author / summary
+① 从 .env 读取 WECHAT_APPID + WECHAT_APPSECRET + WECHAT_AUTHOR
+② 从 final.md frontmatter 读取 title / summary / author（视频原作者，备用）
 ③ 从 output.html 读取正文内容
-④ 上传 cover/cover-combined.png 为永久素材 → media_id
-⑤ POST draft/add → 创建草稿 → 返回 media_id
+④ 上传正文图片到微信 CDN（/cgi-bin/media/uploadimg）→ 替换本地路径
+⑤ 上传封面 cover/cover-combined.png 为永久素材 → media_id
+⑥ POST draft/add → 创建草稿 → 返回 media_id
 ```
 
 ### 成功输出

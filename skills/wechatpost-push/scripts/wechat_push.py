@@ -57,6 +57,7 @@ def load_env() -> dict:
     return {
         "appid": os.environ.get("WECHAT_APPID", ""),
         "appsecret": os.environ.get("WECHAT_APPSECRET", ""),
+        "author": os.environ.get("WECHAT_AUTHOR", ""),
     }
 
 
@@ -189,6 +190,115 @@ def upload_cover(token: str, image_path: str) -> dict:
     return {"media_id": data["media_id"], "url": data.get("url", "")}
 
 
+def upload_content_image(token: str, image_path: str) -> str:
+    """上传正文图片到微信 CDN，返回永久 URL。
+
+    使用 /cgi-bin/media/uploadimg 接口（专用于文章正文图片），
+    返回 https://mmbiz.qpic.cn/... 格式永久 URL，可直接嵌在文章 HTML 中。
+
+    限制: PNG ≤ 1MB, JPEG ≤ 10MB。PNG 超限自动转 JPEG 重试。
+    """
+    import shutil
+    import tempfile
+
+    path = Path(image_path)
+    if not path.exists():
+        err(f"图片不存在: {image_path}")
+
+    file_size = path.stat().st_size
+    upload_path = str(path)
+
+    if path.suffix.lower() == ".png" and file_size > 1 * 1024 * 1024:
+        log(f"PNG 超过 1MB ({file_size/1024:.0f}KB)，尝试转为 JPEG...")
+        try:
+            from PIL import Image as PILImage
+        except ImportError:
+            err(
+                f"PNG 文件 {file_size/1024:.0f}KB 超过微信 1MB 限制。\n"
+                "请安装 Pillow 以自动转换: pip install Pillow"
+            )
+
+        img = PILImage.open(path)
+        if img.mode in ("RGBA", "P"):
+            bg = PILImage.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            bg.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
+            img = bg
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+
+        tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        img.save(tmp.name, "JPEG", quality=90)
+        tmp.close()
+        upload_path = tmp.name
+        log(f"已转 JPEG: {Path(upload_path).stat().st_size/1024:.0f}KB")
+
+    log(f"上传正文图片: {Path(upload_path).name}")
+    api_url = f"{API_BASE}{API_PATH}/media/uploadimg?access_token={token}"
+    data = _upload_file(api_url, upload_path)
+
+    # 清理临时 JPEG 文件
+    if upload_path != str(path):
+        try:
+            os.unlink(upload_path)
+        except OSError:
+            pass
+
+    if "url" not in data:
+        errcode = data.get("errcode", -1)
+        errmsg = data.get("errmsg", str(data))
+        err(f"上传正文图片失败: errcode={errcode} {errmsg}")
+
+    url = data["url"]
+    ok(f"正文图片上传成功: {url[:60]}...")
+    return url
+
+
+def replace_content_images(token: str, html: str, article_dir: Path) -> str:
+    """替换 HTML 中本地图片路径为微信 CDN URL。
+
+    扫描 <img src="illustrations/..."> 等本地相对路径，
+    逐一上传到微信 /cgi-bin/media/uploadimg 并替换为 CDN URL。
+    跳过已指向 http/https 的外部 URL。
+    """
+    import re
+
+    # 匹配 src="非http/https开头的路径"（即本地相对路径）
+    img_re = re.compile(
+        r'(<img\b[^>]*?\ssrc\s*=\s*")((?!https?://)[^"]+)("[^>]*>)',
+        re.IGNORECASE,
+    )
+
+    matches = img_re.findall(html)
+    if not matches:
+        log("正文中未发现本地图片，跳过上传")
+        return html
+
+    log(f"正文发现 {len(matches)} 张本地图片，开始上传...")
+    replaced = 0
+
+    def _replace(m: re.Match) -> str:
+        nonlocal replaced
+        prefix, img_path, suffix = m.group(1), m.group(2), m.group(3)
+        full = (article_dir / img_path).resolve()
+        if full.exists():
+            try:
+                cdn = upload_content_image(token, str(full))
+                replaced += 1
+                return f'{prefix}{cdn}{suffix}'
+            except SystemExit:
+                log(f"⚠ 上传失败，保留原路径: {img_path}")
+                return m.group(0)
+        else:
+            log(f"⚠ 图片未找到，保留原路径: {img_path}")
+            return m.group(0)
+
+    result = img_re.sub(_replace, html)
+    ok(f"正文图片处理完成: {replaced}/{len(matches)} 张已上传微信 CDN")
+    return result
+
+
 def create_draft(
     token: str,
     title: str,
@@ -257,6 +367,7 @@ def push(article_dir: str) -> dict:
     config = load_env()
     appid = config["appid"]
     appsecret = config["appsecret"]
+    wechat_author = config["author"]
     if not appid or not appsecret:
         err(
             "WECHAT_APPID 或 WECHAT_APPSECRET 未配置。\n"
@@ -273,13 +384,17 @@ def push(article_dir: str) -> dict:
 
     frontmatter = _parse_frontmatter(final_md)
     title = frontmatter.get("title", article.parent.name)
-    author = frontmatter.get("author", "")
     summary = frontmatter.get("summary", "")
+    source_author = frontmatter.get("author", "")  # 视频原作者（仅记录用）
+
+    # 公众号文章作者：优先用 .env 中配置的 WECHAT_AUTHOR，
+    # 未配置则 fallback 到 final.md 的视频原作者
+    author = wechat_author or source_author
 
     if not title:
         err("final.md 中未找到 title")
     if not author:
-        log("final.md 中未找到 author，将使用空作者名")
+        log("未找到公众号作者名，请在 .env 中设置 WECHAT_AUTHOR=你的作者名")
 
     # 3. 读取正文
     output_html = article / "output.html"
@@ -292,10 +407,11 @@ def push(article_dir: str) -> dict:
     if not cover_path.exists():
         err(f"未找到封面图: {cover_path}")
 
-    # 5. 换 token → 上传封面 → 创建草稿
+    # 5. 换 token → 上传正文图片 → 上传封面 → 创建草稿
     log(f"文章: {title}")
     log(f"作者: {author or '(未设置)'}")
     token = get_access_token(appid, appsecret)
+    content = replace_content_images(token, content, article)
     thumb = upload_cover(token, str(cover_path))
     media_id = create_draft(token, title, author, summary, content, thumb["media_id"])
 

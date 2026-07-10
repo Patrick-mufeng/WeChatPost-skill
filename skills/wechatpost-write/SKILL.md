@@ -1,6 +1,6 @@
 ---
 name: wechatpost-write
-description: "Write WeChat public account article drafts from video transcripts. Use when the user says 写文章, 写初稿, write, 出稿, or wants to turn a transcript into an article. Reads transcript_corrected.txt and metadata.json from the output folder."
+description: "Write WeChat public account article drafts from video transcripts. Use when the user says 写文章, 写初稿, write, 出稿, 改好了, 修改好了, 定稿, or wants to turn a transcript into an article. Reads transcript_corrected.txt and metadata.json from the output folder. When the user finishes editing draft.md, auto-saves as final.md."
 ---
 
 # wechatpost-write — 逐字稿→公众号初稿
@@ -18,11 +18,25 @@ description: "Write WeChat public account article drafts from video transcripts.
 
 ### Phase 0: 定位输入文件
 
-从用户指定的（或最近一个）`outputs/{标题}_{日期}/` 读取：
-- `transcript_corrected.txt` — 纠错后的逐字稿
-- `metadata.json` — 标题/作者/平台/封面链接
+确定目标文章目录 `outputs/{标题}_{日期}/`：
+- **{标题}**：来自 `metadata.json` 中的 `title`（视频标题，经过文件名安全处理）
+- **{日期}**：当前日期，格式 `YYYY-MM-DD`
 
-如果找不到，提示用户先跑转录。
+从该目录读取：
+- `transcript_corrected.txt` — 纠错后的逐字稿
+- `metadata.json` — 视频元信息
+
+**metadata.json → frontmatter 字段映射**：
+
+| metadata.json（中文语义） | draft.md frontmatter | 说明 |
+|---|---|---|
+| `title`（视频标题） | `source` | 视频原标题，非文章标题 |
+| `uploader`（视频作者） | `author` | 视频原作者 |
+| `source_url` | `platform` | 由 URL 自动检测（抖音/B站/小红书/油管/其他） |
+| — | `title` | **文章标题**（AI 生成，Phase 5 产出） |
+| — | `summary` | **文章简介**（AI 生成，Phase 5 产出） |
+
+如果找不到 `transcript_corrected.txt`，提示用户先跑转录。
 
 ### Phase 1: 分析 + 确定原型
 
@@ -164,7 +178,7 @@ article/
 title: [选中的标题]
 summary: [一句话简介]
 source: [视频标题]
-author: [原作者]
+author: [视频原作者]
 platform: [平台]
 ---
 
@@ -207,10 +221,33 @@ platform: [平台]
   · 四层去AI味自检通过
 
 下一步：
-- 修改 draft.md → 满意后保存为 final.md
+- 修改 draft.md → 改好后说"改好了"，我帮你另存为 final.md
+- 直接说"配图" → 生成正文插图（但建议先定稿）
+- "做封面" → 设计公众号封面
+- "排版" → 转公众号 HTML
+```
+
+---
+
+### Phase 8: 另存为终稿
+
+**触发词**：`修改好了` / `改好了` / `可以了` / `定稿` / `保存终稿` / `save as final`
+
+用户在 draft.md 上修改完成后，说一句触发词，AI 自动执行：
+
+1. 读取 `outputs/{标题}_{日期}/article/draft.md`
+2. 将内容写入 `outputs/{标题}_{日期}/article/final.md`
+3. 验证 final.md 存在且内容 ≥ 500 字节
+4. 输出确认：
+
+```
+✅ 终稿已保存：outputs/{标题}_{日期}/article/final.md
+
+下一步：
 - "配图" → 生成正文插图
 - "做封面" → 设计公众号封面
 - "排版" → 转公众号 HTML
+- "一条龙" → 自动串联后续全部流程
 ```
 
 ---

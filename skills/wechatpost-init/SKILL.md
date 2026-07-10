@@ -16,7 +16,7 @@ description: "Initialize WeChatPost project. Use when the user says 初始化, i
   ↓
 Phase 1: 环境检查（Python/ffmpeg/whisper/yt-dlp/lark-cli + Node.js/puppeteer/canvas）
   ↓
-Phase 2: API 配置（云雾+beeimg+开关）
+Phase 2: API 配置（云雾+配图开关）
   ↓
 Phase 3: 🆕 公众号推送配置（可选）
   ↓
@@ -50,7 +50,8 @@ bash scripts/install.sh
 ```bash
 # Python 依赖（转录管线）
 python --version         2>&1
-ffmpeg -version          2>&1 | head -1
+ffmpeg -version          2>&1
+# 验证：输出版本信息即通过（如 "ffmpeg version 6.x"）
 python -c "import whisper; print('whisper OK')" 2>&1
 yt-dlp --version         2>&1
 python -c "import httpx; print('httpx OK')" 2>&1
@@ -117,29 +118,22 @@ cat > .env << 'EOF'
 YUNWU_API_KEY=sk-your-api-key-here
 YUNWU_BASE_URL=https://yunwu.ai/
 
-# ── 图床 API（beeimg）── 配图上传获取公开URL ──
-# 登录：https://www.beeimg.cn 获取 Bearer Token
-BEEIMG_TOKEN=your-bearer-token-here
-BEEIMG_BASE_URL=https://www.beeimg.cn
-
 # ── 配图开关 ──
-# true=启用配图（需填上面两组Key） false=跳过配图阶段
-ILLUSTRATE_ENABLED=false
+# true=启用配图（需填上面 Key） false=跳过配图阶段
+ILLUSTRATE_ENABLED=true
 EOF
 ```
 
 ### 2.3 引导用户
 
 ```
-⚙️ 配图功能需要两组 API：
+⚙️ 配图功能需要云雾 API：
 
 ① 云雾 API（gpt-image-2 生图）
    注册：https://yunwu.ai/register?aff=zM1f
    → 复制 API Key 填入 .env 的 YUNWU_API_KEY=
 
-② beeimg 图床（图片上传）
-   登录：https://www.beeimg.cn
-   → 后台 → API Token → 复制填入 BEEIMG_TOKEN=
+图片生成后保存为本地 PNG，推送阶段自动上传到微信 CDN，无需额外图床。
 
 现在怎么做？
 A) 我去注册，填好 Key 后说"配置完成"
@@ -153,7 +147,6 @@ B) 先跳过配图（ILLUSTRATE_ENABLED=false），后面可重新初始化
 ```
 📋 API 配置
   □ YUNWU_API_KEY：已配置 ✅ / 未填写 ⚠️
-  □ BEEIMG_TOKEN：已配置 ✅ / 未填写 ⚠️
   □ ILLUSTRATE_ENABLED：true / false
 ```
 
@@ -189,6 +182,7 @@ B) 不需要 — 继续手动粘贴发布
 4. 将凭证写入 .env：
    WECHAT_APPID=wx1234567890
    WECHAT_APPSECRET=你的appsecret
+   WECHAT_AUTHOR=你的作者名
 
 5. ⚠️ IP 白名单：在「基本配置」页面将本机出口 IP 加入白名单
    （可搜索"我的 IP"获取，或使用 curl ifconfig.me）
@@ -237,6 +231,26 @@ else:
 | `FAIL: errcode=40125` | AppSecret 错误 |
 | `FAIL: errcode=40164` | IP 未加白名单 |
 | `NETWORK_ERROR` | 网络问题或 IP 白名单未配置 |
+
+### 设置公众号作者名
+
+凭证验证通过后，询问作者名：
+
+```
+✏️ 公众号文章作者名是什么？
+
+这个名称会出现在每篇文章的标题下方，通常是你公众号的运营者名字。
+
+输入作者名（如"Patrick"，后续所有推送统一使用）：
+```
+
+用户输入后，追加到 `.env`：
+
+```env
+WECHAT_AUTHOR=Patrick
+```
+
+> 如果用户暂时不想设置，可以说"跳过"——推送时会 fallback 使用视频原作者名。之后可以手动在 `.env` 中添加 `WECHAT_AUTHOR=你的名字`。
 
 ### B. 跳过
 
@@ -291,7 +305,7 @@ lark-cli base +record-list \
 
 ## Phase 6 · 风格设定 + 创建项目文件
 
-### 5.0 询问风格模式
+### 6.0 询问风格模式
 
 ```
 ✏️ 风格设定——让 AI 写得像你
@@ -303,7 +317,7 @@ C) 先跳过 — 用默认风格，后续每次改稿 AI 自动学习
 选哪个？
 ```
 
-### 5A · 口头描述
+### 6A · 口头描述
 
 ```
 你怎么形容你的公众号？
@@ -321,7 +335,7 @@ D) 其他（自己说）
 
 用户一句话说完 → 填入 `style_guide.md`。
 
-### 5B · 提供文章分析（≥5 篇）
+### 6B · 提供文章分析（≥5 篇）
 
 #### 输入
 
@@ -425,11 +439,11 @@ D) 其他（自己说）
 （暂无）
 ```
 
-### 5C · 跳过
+### 6C · 跳过
 
 直接创建 `style_guide.md` 空模板（所有字段留空），后续自动学习填充。
 
-### 5.0 创建项目脚手架
+### 6.1 创建项目脚手架
 
 无论选 A/B/C，在 Phase 5 完成后，先创建项目目录结构：
 
@@ -459,7 +473,7 @@ outputs/{标题}_{YYYY-MM-DD}/
     └── cover/                 ← 封面图片
 ```
 
-### 5.1 创建 WORKFLOW.md
+### 6.2 创建 WORKFLOW.md
 
 无论选 A/B/C，都创建 `WORKFLOW.md`：
 
@@ -475,11 +489,11 @@ outputs/{标题}_{YYYY-MM-DD}/
 |------|--------|
 | "处理视频" | 读飞书→下载→转录→纠错 |
 | "写文章" | 逐字稿→公众号初稿 |
-| "配图" | shot list→API生图→图床 |
+| "配图" | shot list→API生图→本地PNG |
 | "做封面" | 三维分析→40模板→HTML预览 |
 | "排版" | Markdown→公众号HTML |
 | "推送" | 推送到公众号草稿箱（需微信凭证） |
-| "已发布 https://..." | 发布链接回写飞书 + 清理图床 |
+| "已发布 https://..." | 发布链接回写飞书 |
 | "看板" | 查看全流程进度 |
 | "一条龙" | 1→7 全自动 |
 
@@ -501,7 +515,7 @@ outputs/{标题}_{YYYY-MM-DD}/
      │          │                     │
      │          ├─6── wechatpost-push（推送草稿箱）
      │          │                     │
-     │          └─7── wechatpost-publish（飞书登记+图床清理）
+     │          └─7── wechatpost-publish（飞书登记）
 ```
 
 ## 🔧 环境

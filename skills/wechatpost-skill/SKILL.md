@@ -36,6 +36,7 @@ wechatpost-skill/
 | "初始化" / "init" / "首次使用" / "开始使用" / "配置" | `wechatpost-init` | 无（这是入口，其他 skill 的前置） |
 | "处理视频" / "转录" / "视频转文案" | **主路由自己处理** | 飞书表格有 待处理 记录 |
 | "写文章" / "写初稿" / "write" / "出稿" | `wechatpost-write` | `transcript_corrected.txt` 存在 |
+| "修改好了" / "改好了" / "定稿" / "保存终稿" | `wechatpost-write`（Phase 8 另存 final.md） | `draft.md` 存在 |
 | "配图" / "插图" / "做插图" / "illustrate" / "正文配图" | `wechatpost-illustrate` | `final.md` 存在 |
 | "做封面" / "封面" / "cover" / "公众号封面" / "设计封面" | `wechatpost-cover` | 有终稿 |
 | "排版" / "format" / "转HTML" / "转公众号" / "公众号排版" | `wechatpost-format` | `final.md` 存在（封面建议先做，非强制） |
@@ -64,7 +65,6 @@ WeChatPost-skill/
 │           ├── output-preview.html  # 手机预览 + 一键复制
 │           ├── illustrations/       # 正文配图
 │           │   ├── shot-list.md     # 配图分镜计划
-│           │   ├── uploaded-keys.json # 图床上传记录
 │           │   └── 01-{主题}.png
 │           ├── cover/               # 封面
 │           │   ├── preview.html     # 双版预览
@@ -84,11 +84,11 @@ WeChatPost-skill/
 |----------|----------|
 | 转录（主路由） | re-read transcript_corrected.txt ≥ 500 字节 + 飞书状态已更新 |
 | `wechatpost-write` | re-read draft.md ≥ 500字节 + 含标题候选 + 含正文 |
-| `wechatpost-illustrate` | re-read shot-list.md + 每张 PNG 存在 + 图床 URL + final.md 有引用 |
+| `wechatpost-illustrate` | re-read shot-list.md + 每张 PNG 存在 + final.md 有引用 |
 | `wechatpost-cover` | re-read preview.html + 双版预览 + CSS 内联 |
 | `wechatpost-format` | re-read output.html ≥ 1000字节 + 无禁用标签 + 配图内联 |
 | `wechatpost-push` | re-read 推送结果：media_id 非空 + 飞书备注已写入 |
-| `wechatpost-publish` | re-read 飞书记录：发布链接/时间/状态 全部写入 + beeimg 图片已删除（无配图则跳过） |
+| `wechatpost-publish` | re-read 飞书记录：发布链接/时间/状态 全部写入 |
 
 **失败处理**：缺失 → 立即重写 → re-read 确认 → 仍不通过 → 输出 `❌ 自检失败，请手动检查`。
 
@@ -108,7 +108,7 @@ WeChatPost-skill/
 | 标题 | 文本 | 自动提取 |
 | 链接 | 文本 | 视频链接（输入） |
 | 平台 | 单选 | 自动检测（抖音/B站/小红书/油管/其他平台） |
-| 状态 | 单选 | 待处理→处理中→已转录→已写稿→已完成 |
+| 状态 | 单选 | 待处理→处理中→已转录→已写稿→已排版→已完成 |
 | 作者 | 文本 | 自动提取 |
 | 视频时长 | 文本 | 自动提取 |
 | 文案 | 文本 | 纠错后文案 |
@@ -236,10 +236,44 @@ lark-cli base +record-batch-update \
 读取待处理 → 转录 → 写初稿 → 配图 → 封面 → 排版 → 推送 → 发布登记 → 更新状态
 ```
 
-每个阶段完成后自动进入下一阶段，遇到失败记录到飞书备注并继续处理下一条视频（并非跳过当前文章的其他阶段，而是当前文章标记失败后继续处理队列中的下一篇）。
+每个阶段完成后自动进入下一阶段。失败处理分为两类：
+
+- **致命失败**（转录失败/写稿失败）：当前文章标记失败，记录到飞书备注，继续处理队列中的下一篇。
+- **非致命失败**（配图失败/封面失败/排版失败）：输出警告，跳过该阶段继续后续流程（如配图失败→跳过配图，继续封面和排版）。失败信息记录到飞书备注。
+
+推送阶段如有凭证问题，提示用户手动操作（打开 output-preview.html → 复制 HTML → 粘贴公众号后台）。
 
 详细流程见各子 skill：
 - 写初稿：`skills/wechatpost-write/SKILL.md`
 - 配图：`skills/wechatpost-illustrate/SKILL.md`
 - 封面：`skills/wechatpost-cover/SKILL.md`
 - 排版：`skills/wechatpost-format/SKILL.md`
+- 推送：`skills/wechatpost-push/SKILL.md`
+- 发布登记：`skills/wechatpost-publish/SKILL.md`
+- 看板：`skills/wechatpost-status/SKILL.md`
+
+---
+
+## 状态码
+
+```
+待处理 → 处理中 → 已转录 → 已写稿 → 已排版 → 已完成
+```
+
+配图/封面阶段不单独对应飞书状态值，统一在排版完成后更新为「已排版」，推送+发布登记完成后更新为「已完成」。
+
+### 断点续跑
+
+如果流程中断（会话结束/网络断开），重新说"一条龙"即可继续。Agent 会自动检测每个阶段的产出文件：
+
+```
+outputs/{标题}_{日期}/
+  ├── transcript_corrected.txt  → 转录 ✅ → 跳到写稿
+  ├── article/final.md          → 写稿 ✅ → 跳到配图
+  ├── article/illustrations/    → 配图 ✅ → 跳到封面
+  ├── article/cover/            → 封面 ✅ → 跳到排版
+  ├── article/output.html       → 排版 ✅ → 跳到推送
+  └── （推送/登记检查飞书状态）
+```
+
+也可以用单独命令从任意阶段恢复：`写文章` / `配图` / `做封面` / `排版` / `推送` / `已发布`。

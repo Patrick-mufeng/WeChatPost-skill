@@ -7,6 +7,28 @@ description: "Format Markdown articles to WeChat-compatible HTML. Use when the u
 
 > 将 Markdown 终稿转为微信公众号兼容 HTML。零外部依赖，AI 直接生成。
 
+## 前置：读设计规范（强制）
+
+**每次排版前，必须先读取完整设计规范：**
+
+```
+references/design-spec.md — 公众号 HTML 排版设计规范（509 行完整版）
+```
+
+该规范基于 135 编辑器、秀米编辑器的真实公众号文章源码逆向分析 + 实际粘贴兼容性验证，定义了：
+
+- 标签白名单与禁止标签
+- CSS 属性兼容性白名单（布局/盒模型/文字/背景/边框/特效）
+- 安全布局模式（Flex 行/列/图片容器）
+- 颜色系统与层级
+- 排版组件模板（标题栏/引用块/图文卡片/分割线/头尾卡片/按钮）
+- 粘贴后必检清单
+- 设计原则：安全 > 花哨、纯色优先、渐进增强
+
+**以下为快速参考摘要，完整细节见 `references/design-spec.md`。每次排版开始前必须 re-read 该文件。**
+
+---
+
 ## 微信公众号兼容性规则（强制）
 
 公众号编辑器只识别有限标签。违反以下规则会被过滤或样式丢失：
@@ -15,31 +37,42 @@ description: "Format Markdown articles to WeChat-compatible HTML. Use when the u
 
 | 标签 | 用途 | 说明 |
 |------|------|------|
-| `<section>` | 唯一块级容器 | ✅ 允许，禁用 `<div>` |
+| `<section>` | 唯一块级容器 | ✅ 允许，嵌套深度无限制 |
 | `<p>` | 段落 | ✅ 允许，**margin 必须清零**：`margin:0px` |
 | `<span>` | 行内样式 | ✅ 允许 |
 | `<strong>` | 加粗 | ✅ 允许 |
 | `<em>` | 斜体 | ✅ 允许 |
-| `<br>` | 换行 | ✅ 允许 |
-| `<img>` | 图片 | ✅ 允许 |
-| `<h1~h6>` | 标题 | ❌ **禁用**——用 `<p>` + 字号模拟 |
+| `<br>` | 换行 | ✅ 允许（使用 `<br/>`） |
+| `<img>` | 图片 | ✅ 允许，必须带 `draggable="false"` |
+| `<svg>` / `<foreignObject>` | SVG 装饰/绝对定位 | ✅ 允许（135 编辑器常用技法） |
+| `<h1~h6>` | 标题 | ❌ **禁用**——用 `<p>` + `font-size` 模拟 |
 | `<div>` | 容器 | ❌ **禁用**——用 `<section>` |
-| `<style>` | 样式 | ❌ **禁用**——全部内联 |
+| `<style>` / `<link>` | 样式 | ❌ **禁用**——全部内联 |
+| `<table>` / `<ul>` / `<ol>` | 列表 | ❌ **禁用**——用 flex 替代 |
+| `<a>` | 链接 | ❌ **禁用**——公众号不支持外链 |
 
 ### CSS 安全/风险清单
 
-| 属性 | 状态 |
-|------|------|
-| `color`, `font-size`, `font-weight`, `line-height`, `letter-spacing` | ✅ 安全 |
-| `text-align`, `margin`, `padding`, `border`, `border-radius` | ✅ 安全 |
-| `background-color` (纯色) | ✅ 安全 |
-| `width`, `max-width`, `height` | ✅ 安全 |
-| `box-shadow` | ⚠️ 有风险，接受丢失 |
-| `background: linear-gradient(...)` | ❌ 最易被过滤 |
-| `background-image: url(...)` | ❌ 外部图片不加载 |
-| `transform`, `opacity` | ❌ 大概率丢失 |
-| `gap` (flex) | ⚠️ 用 margin 替代 |
-| `!important` | ❌ 粘贴时剥离 |
+| 属性 | 状态 | 说明 |
+|------|------|------|
+| `color`, `font-size`, `font-weight`, `line-height`, `letter-spacing` | ✅ 安全 | |
+| `text-align`, `margin`, `padding`, `border`, `border-radius` | ✅ 安全 | |
+| `background-color` (纯色) | ✅ 安全 | 最安全的方式 |
+| `background: linear-gradient(...)` | ✅ 安全 | 多色停止点、rgba 透明度渐变均支持 |
+| `background-image: url(...)` | ✅ 安全 | 外部图片 URL 可加载 |
+| `width`, `max-width`, `height` | ✅ 安全 | `max-width:100%!important` 强制 |
+| `box-sizing: border-box` | ✅ 强制 | 每个元素必须带 |
+| `box-shadow` | ✅ 安全 | `rgba(0,0,0,0.15) 1px 1px 10px` 已验证 |
+| `text-shadow` | ✅ 安全 | 支持多阴影叠加描边效果 |
+| `transform` (rotate/skew/translate) | ✅ 安全 | **必须带 4 个厂商前缀** |
+| `opacity` | ✅ 安全 | |
+| `display: grid` | ✅ 安全 | 用于绝对定位叠加（grid 同单元格） |
+| `<svg>` / `<foreignObject>` | ✅ 安全 | 135 编辑器常用 |
+| `gap` (flex) | ✅ 安全 | |
+| `!important` | ⚠️ 粘贴时可能被剥离 | 检查粘贴后是否保留 |
+| `position: relative/absolute/fixed` | ❌ 禁用 | |
+| `animation` / `transition` / `@keyframes` | ❌ 禁用 | |
+| `calc()` / `vw` / `vh` / `rem` / `var()` | ❌ 禁用 | |
 
 ### 正文排版默认参数
 
@@ -76,7 +109,7 @@ Phase 4: 自检 + 交付
 1. 读 `outputs/{标题}_{日期}/article/final.md`
 2. 提取 frontmatter（title/summary）
 3. 跳过「标题候选」「简介」段，取最后一个 `---` 之后的正文
-4. 检查封面是否做了 → 没做提示先"做封面"
+4. 检查封面是否做了 → 没做给出提示（建议先做封面以获得最佳效果），但不强制，允许继续排版
 5. 检查配图是否做了 → 没做可选跳过
 
 ---
@@ -147,7 +180,9 @@ C. AI 自主设计 — 不套预设，根据设计规范全新创作
 
 ## Phase 2 · 生成 output.html
 
-> ⚠️ **开始生成前，必须先回顾本文件的「微信公众号兼容性规则」和「正文排版默认参数」两节，确认设计约束后再动笔。**
+> ⚠️ **开始生成前，必须先 re-read `references/design-spec.md`，确认所有设计约束后再动笔。**
+> 
+> 以下为快速参考，完整规范（布局模式、组件模板、颜色系统、粘贴验证清单等）见 `references/design-spec.md`。
 
 ### 格式转换规则
 
@@ -160,7 +195,7 @@ C. AI 自主设计 — 不套预设，根据设计规范全新创作
 | `- 列表` | `<p style="margin:4px 0 4px 16px">· 列表项</p>` |
 | `> 引用` | `<section style="border-left:3px solid {强调色};padding:8px 12px;margin:12px 0;background:{浅色背景}"><p style="margin:0;color:{辅助色}">` |
 | `![alt](path)` | `<img src="{path}" alt="{alt}" style="max-width:100%;border-radius:4px;margin:16px 0">` |
-| `---` | `<section style="text-align:center;margin:24px 0"><span style="color:{浅色};letter-spacing:8px">···</span></section>` |
+| `---` | `<section style="text-align:center;margin:24px 0"><span style="color:#ccc;letter-spacing:8px">···</span></section>` |
 | 空行 | `<p style="margin:0">&nbsp;</p>` |
 
 ### 输出文件结构
@@ -176,15 +211,15 @@ C. AI 自主设计 — 不套预设，根据设计规范全新创作
 ### 路径规则
 
 - 封面图片引用：`cover/cover-2x35.png`（相对于 article/ 目录）
-- 配图引用：`illustrations/01-xxx.png`（图床 URL，由 illustrate 阶段写入 final.md）
+- 配图引用：`illustrations/01-xxx.png`（本地路径，由 illustrate 阶段写入 final.md，推送时自动上传微信 CDN）
 - 保存到：`outputs/{标题}_{日期}/article/output.html`
 
 ### 配图处理
 
-配图由 `wechatpost-illustrate` 阶段上传到 beeimg 图床，URL 已写入 final.md。排版时直接用图床 URL：
+配图由 `wechatpost-illustrate` 阶段生成为本地 PNG，路径已写入 final.md。排版时使用本地相对路径，推送阶段 `wechat_push.py` 会自动上传到微信 CDN 并替换 URL：
 
 ```html
-<img src="https://www.beeimg.cn/xxxx/xxx.png" alt="{主题}" style="max-width:100%;border-radius:4px;margin:16px 0">
+<img src="illustrations/01-xxx.png" alt="{主题}" style="max-width:100%;border-radius:4px;margin:16px 0">
 ```
 
 
@@ -414,13 +449,13 @@ C. AI 自主设计 — 不套预设，根据设计规范全新创作
           <div class="speaker-slit"></div>
           <div class="dynamic-island"></div>
           <div class="statusbar"><span id="timeLabel">9:41</span><span style="font-size:9px">▮▮▮▮ &nbsp;⋮⋮⋮⋮</span></div>
-          <div class="content" id="content">
-            <div class="empty-state">
-              <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01" stroke-width="2.5"/></svg></div>
-              <h3>准备预览</h3>
-              <p>在左侧面板粘贴公众号 HTML<br/>或拖拽 .html 文件至此</p>
-            </div>
-          </div>
+	  <div class="content" id="content">
+	    <div class="empty-state" id="emptyState">
+	      <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01" stroke-width="2.5"/></svg></div>
+	      <h3>准备预览</h3>
+	      <p>在左侧面板粘贴公众号 HTML<br/>或拖拽 .html 文件至此</p>
+	    </div>
+	  </div>
           <div class="scroll-fade" id="scrollFade"></div>
           <div class="homebar"></div>
         </div>
@@ -430,6 +465,9 @@ C. AI 自主设计 — 不套预设，根据设计规范全新创作
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 排版 HTML 数据注入点（AI 生成时替换此处内容） -->
+<script id="article-data" type="text/x-template"></script>
 
 <script>
 const htmlSource = document.getElementById('htmlSource');
@@ -597,8 +635,14 @@ function showToast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'
 function updateTime(){ var d = new Date(); timeLabel.textContent = d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
 setInterval(updateTime, 30000); updateTime();
 
-// 接收排版生成的 HTML 内容
+// 自动加载排版生成的 HTML 内容（从内嵌 <script> 标签读取）
 (function(){
+  var el = document.getElementById('article-data');
+  if (el && el.textContent && el.textContent.trim()) {
+    htmlSource.value = el.textContent.trim();
+    renderContent();
+  }
+  // 兼容旧版 window.name 机制（保留作为 fallback）
   if (window.name && window.name.indexOf('WECHATPOST_HTML:') === 0) {
     var html = decodeURIComponent(window.name.slice('WECHATPOST_HTML:'.length));
     window.name = '';
@@ -612,6 +656,27 @@ setInterval(updateTime, 30000); updateTime();
 
 保存到：`outputs/{标题}_{日期}/article/output-preview.html`
 
+### ⚠️ 注入排版 HTML（强制）
+
+**写入 output-preview.html 时，必须将 Phase 2 生成的 `output.html` 完整内容注入到预览页面中**，让用户打开文件即可看到排版效果，无需手动粘贴。
+
+具体操作：
+
+1. **读取** Phase 2 生成的 `outputs/{标题}_{日期}/article/output.html`
+2. 在 output-preview.html 模板中，找到：
+   ```html
+   <script id="article-data" type="text/x-template"></script>
+   ```
+3. 将该标签的内容替换为 `output.html` 的**原始 HTML**（不需要转义，放在 `<script type="text/x-template">` 内不会被渲染）
+4. 写入文件后，页面 JS 会自动读取该标签内容并注入 textarea + 渲染预览
+
+**注入示例**：
+```html
+<script id="article-data" type="text/x-template"><section style="max-width:677px;margin:0 auto;...">...正文内容...</section></script>
+```
+
+> 注意：如果 HTML 内容中包含 `</script>` 字符串，需替换为 `<\/script>` 防止提前闭合。
+
 ---
 
 ## Phase 4 · 自检 + 交付
@@ -621,7 +686,7 @@ setInterval(updateTime, 30000); updateTime();
 - [ ] 文件存在，字节 > 1000
 - [ ] 无 `<div>`、`<h1~h6>`、`<style>` 标签
 - [ ] 所有样式内联
-- [ ] `![alt](path)` 已转为 `<img>` 标签，引用图床 URL
+- [ ] `![alt](path)` 已转为 `<img>` 标签，引用本地路径（推送时自动上传微信 CDN）
 - [ ] 封面图路径正确
 
 ```
@@ -641,5 +706,5 @@ setInterval(updateTime, 30000); updateTime();
 3. **所有 CSS 内联**——无 `<style>` 标签
 4. **不做渐变/阴影/变形**——会被过滤
 5. **margin 清零**——所有 `<p>` 设 `margin:0`，段落间用 `margin-bottom:8px`
-6. **配图用图床 URL**——`<img>` 引用 beeimg 公开链接
+6. **配图用本地相对路径**——`<img>` 引用 `illustrations/` 下的本地 PNG，推送时自动上传微信 CDN
 7. **字号 14px 起**——公众号最小可读字号

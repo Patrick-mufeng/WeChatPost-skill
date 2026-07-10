@@ -80,7 +80,7 @@ cp -r skills/* ~/.claude/skills/
 | **多平台视频下载** | 支持 30+ 平台（抖音/B 站/小红书/YouTube/Twitter…），自动识别 URL |
 | **Whisper 语音转录** | 本地 Whisper 模型将视频语音转为文字，LLM 自动纠错 |
 | **AI 写稿** | 6 套标题公式 + 四层去 AI 味自检，输出带评分的标题候选和公众号初稿 |
-| **AI 配图** | 基于文章内容自动生成 4–8 张配图，平涂线稿画风 + 固定 IP 角色"小霓" |
+| **AI 配图** | 基于文章内容自动生成 4–8 张配图，平涂线稿画风 + 固定 IP 角色"小霓"，推送时自动上传微信 CDN |
 | **40 套封面模板** | 瑞士极简、赛博霓虹、东方水墨… 三维分析（情绪/领域/调性）自动推荐 |
 | **公众号排版** | Markdown → 微信公众号兼容 HTML，手机预览 + 一键复制 |
 | **推送到草稿箱** | 通过微信官方 API 直接推送图文到公众号草稿箱（可选） |
@@ -116,7 +116,7 @@ WeChatPost-skill/
 │   ├── wechatpost-init/               ← ① 初始化
 │   ├── wechatpost-write/              ← ③ 写稿
 │   ├── wechatpost-illustrate/         ← ④ 配图
-│   │   ├── scripts/                   ← 生图 + 图床上传脚本
+│   │   ├── scripts/                   ← 生图脚本（mitu）
 │   │   └── references/                ← 风格 DNA / IP 设定 / Prompt 模板
 │   ├── wechatpost-cover/              ← ⑤ 封面
 │   ├── wechatpost-format/             ← ⑥ 排版
@@ -137,7 +137,6 @@ WeChatPost-skill/
             ├── output-preview.html
             ├── illustrations/
             │   ├── shot-list.md
-            │   ├── uploaded-keys.json
             │   └── 01-{主题}.png
             └── cover/
                 ├── preview.html
@@ -165,8 +164,8 @@ WeChatPost-skill/
     产出: draft.md → final.md（用户编辑后）
     │
 ④  配图 (wechatpost-illustrate)
-    读 final.md → 配色分析 → shot list → API 生图 → beeimg 图床 → 插入 final.md
-    产出: illustrations/*.png + uploaded-keys.json
+    读 final.md → 配色分析 → shot list → API 生图 → 本地 PNG → 插入 final.md
+    产出: illustrations/*.png
     │
 ⑤  封面 (wechatpost-cover)
     A/B/C 三选一 → 三维分析 → 模板/AI 设计 → 预览 HTML → screenshot.js 渲染 PNG
@@ -177,11 +176,11 @@ WeChatPost-skill/
     产出: output.html + output-preview.html
     │
 ⑦  推送 (wechatpost-push)【可选】
-    读 output.html + cover-combined.png → 微信 API → 草稿箱
+    读 output.html + cover-combined.png → 上传图片到微信 CDN → 微信 API → 草稿箱
     产出: media_id（写回飞书备注）
     │
 ⑧  发布登记 (wechatpost-publish)
-    确认发布链接 → 飞书写回 → 删除 beeimg 图床图片
+    确认发布链接 → 飞书写回
     状态: 已完成
 ```
 
@@ -198,7 +197,7 @@ WeChatPost-skill/
 | 阶段 | 内容 |
 |------|------|
 | Phase 1 | 环境检查：Python / ffmpeg / Whisper / yt-dlp / httpx / lark-cli / Node.js / puppeteer / canvas / 微信凭证（可选） |
-| Phase 2 | API 配置：云雾 API（AI 生图）+ beeimg 图床（图片上传）|
+| Phase 2 | API 配置：云雾 API（AI 生图）|
 | Phase 3 | 公众号推送配置：询问是否启用，引导获取 APPID/APPSECRET，验证凭证 |
 | Phase 4 | ASR 引擎选择：本地 Whisper（推荐）/ 火山引擎 ASR |
 | Phase 5 | 飞书表格验证：测试连接，检查字段与记录数 |
@@ -276,12 +275,12 @@ WeChatPost-skill/
 
 | Phase | 内容 |
 |-------|------|
-| Phase 0 | API Key 检查（`YUNWU_API_KEY` + `BEEIMG_TOKEN`） |
+| Phase 0 | 配图开关检查（`ILLUSTRATE_ENABLED`）+ API Key 检查（`YUNWU_API_KEY`） |
 | Phase 1 | 读 `final.md` → 提炼核心观点 + 配色分析（5 套情绪色板选一） |
 | Phase 2 | 出 shot list（4-8 张配图计划，标注色板） |
 | Phase 3 | 用户确认 shot list |
-| Phase 4 | 逐张生图（云雾 API → gpt-image-2）→ 上传 beeimg 图床 |
-| Phase 5 | 将图床 URL 插入 `final.md` |
+| Phase 4 | 逐张生图（云雾 API → gpt-image-2）→ 保存本地 PNG |
+| Phase 5 | 将本地图片路径插入 `final.md` |
 | Phase 6 | 交付汇总 |
 | Phase 7 | 自检 |
 
@@ -311,7 +310,7 @@ WeChatPost-skill/
 
 **所需 API**：
 - 云雾 API（gpt-image-2 生图）— `YUNWU_API_KEY`
-- beeimg 图床（Lsky Pro API）— `BEEIMG_TOKEN`
+- 图片生成后保存为本地 PNG，推送时自动上传微信 CDN
 
 ---
 
@@ -361,7 +360,7 @@ WeChatPost-skill/
 
 | Phase | 内容 |
 |-------|------|
-| Phase 0 | 读 `final.md` + 前置检查（封面/配图状态） |
+| Phase 0 | 读 `final.md` + 前置检查（封面建议先做 / 配图可选跳过） |
 | Phase 1 | 排版方式选择：A 预设主题 / B 自己描述 / C AI 自主设计 |
 | Phase 2 | 生成 `output.html`（公众号兼容 HTML） |
 | Phase 3 | 生成 `output-preview.html`（手机预览 + 一键复制） |
@@ -428,9 +427,8 @@ WeChatPost-skill/
 |-------|------|
 | Phase 0 | 确认发布信息（链接 + 时间） |
 | Phase 1 | 回写飞书表格（发布链接/时间/状态 → 已发布+已完成） |
-| Phase 2 | 删除 beeimg 图床图片（微信已自行托管，本地 PNG 保留） |
-| Phase 3 | 确认交付 |
-| Phase 4 | 自检（飞书记录 + beeimg 清理） |
+| Phase 2 | 确认交付 |
+| Phase 3 | 自检（飞书记录验证） |
 
 ---
 
@@ -438,7 +436,13 @@ WeChatPost-skill/
 
 **触发词**：`看板` / `状态` / `status` / `进度` / `到哪了` / `今天干什么`
 
-读取飞书表格，按状态分类展示所有文章进度。输出示例：
+3 Phase 流程：
+
+| Phase | 内容 |
+|-------|------|
+| Phase 0 | 验证飞书连接 |
+| Phase 1 | 读取飞书表格全部记录 |
+| Phase 2 | 渲染看板（汇总 + 每条详情 + 进度条 + 下一步操作提示） |
 
 ```
 📊 WeChatPost 看板
@@ -447,6 +451,7 @@ WeChatPost-skill/
 处理中: 1 篇
 已转录: 2 篇
 已写稿: 1 篇
+已排版: 1 篇
 已完成: 12 篇
 ```
 
@@ -459,13 +464,20 @@ WeChatPost-skill/
 | `初始化` | 首次使用，配置环境和 API |
 | `处理视频` | 读飞书 → 下载 → 转录 → 纠错 |
 | `写文章` | 逐字稿 → 公众号初稿（含 5 个标题候选） |
-| `配图` | shot list → API 生图 → 图床 |
+| `改好了` / `定稿` | 将 draft.md 另存为 final.md |
+| `配图` | shot list → API 生图 → 本地 PNG（推送时自动上传微信 CDN） |
 | `做封面` | 三维分析 → 模板/AI 设计 → HTML 预览 → PNG |
 | `排版` | Markdown → 公众号兼容 HTML → 手机预览 |
 | `推送` | 推送到公众号草稿箱（需微信凭证） |
-| `已发布 https://...` | 飞书登记 + 图床清理 |
+| `已发布 https://...` | 飞书登记 |
 | `看板` | 查看全流程进度 |
-| `一条龙` | 转录 → 写稿 → 配图 → 封面 → 排版 → 推送 → 登记（全自动） |
+| `一条龙` | 转录 → 写稿 → 配图 → 封面 → 排版 → 推送 → 登记（全自动，非致命失败自动跳过继续） |
+
+**一条龙失败策略**：
+- 致命失败（转录/写稿）→ 标记当前文章失败，继续处理队列中下一篇
+- 非致命失败（配图/封面/排版）→ 跳过该阶段，继续后续流程
+
+**断点续跑**：会话中断后重新说「一条龙」，Agent 自动检测各阶段产出文件从断点处继续。也可用单独命令恢复：`写文章` / `配图` / `做封面` / `排版` / `推送`。
 
 ---
 
@@ -483,8 +495,7 @@ outputs/{标题}_{YYYY-MM-DD}/
     ├── output-preview.html    ← 手机预览 + 一键复制
     ├── illustrations/
     │   ├── shot-list.md       ← 配图分镜计划
-    │   ├── uploaded-keys.json ← 图床上传记录
-    │   └── 01-{主题}.png      ← 本地 PNG（中间产物）
+    │   └── 01-{主题}.png      ← 本地 PNG（推送时自动上传微信 CDN）
     └── cover/
         ├── preview.html       ← 双版封面预览
         ├── cover-2x35.png     ← 公众号首图（2.35:1）
@@ -501,7 +512,6 @@ outputs/{标题}_{YYYY-MM-DD}/
 | 配置项 | 用途 | 获取方式 |
 |--------|------|----------|
 | `YUNWU_API_KEY` | AI 配图生图（云雾 API） | https://yunwu.ai/register?aff=zM1f |
-| `BEEIMG_TOKEN` | 配图上传图床（beeimg） | https://www.beeimg.cn 后台获取 |
 | `WECHAT_APPID` | 公众号草稿箱推送（可选） | 公众号后台 → 设置与开发 → 基本配置 |
 | `WECHAT_APPSECRET` | 同上 | 同上 |
 | 飞书多维表格 | 任务队列与状态追踪 | 项目内置 Base Token |
@@ -513,16 +523,13 @@ outputs/{标题}_{YYYY-MM-DD}/
 YUNWU_API_KEY=sk-your-api-key-here
 YUNWU_BASE_URL=https://yunwu.ai/
 
-# ── 图床 API（beeimg）──
-BEEIMG_TOKEN=your-bearer-token-here
-BEEIMG_BASE_URL=https://www.beeimg.cn
-
 # ── 配图开关 ──
-ILLUSTRATE_ENABLED=false
+ILLUSTRATE_ENABLED=true
 
 # ── 微信公众号 API（可选）──
 WECHAT_APPID=wx1234567890
 WECHAT_APPSECRET=your-appsecret-here
+WECHAT_AUTHOR=你的作者名
 ```
 
 ---

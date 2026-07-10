@@ -12,10 +12,22 @@ description: "Display WeChatPost pipeline status dashboard by reading the Feishu
 ```
 用户: "看板" / "状态"
   ↓
+Phase 0: 验证飞书连接
+  ↓
 Phase 1: 读取飞书表格全部记录
   ↓
 Phase 2: 渲染看板
 ```
+
+---
+
+## Phase 0 · 验证飞书连接
+
+```bash
+lark-cli auth status
+```
+
+连接有效 → 进入 Phase 1。未登录 → 提示 `lark-cli auth login`。
 
 ---
 
