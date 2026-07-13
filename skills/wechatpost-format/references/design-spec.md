@@ -37,7 +37,7 @@ Version: 1.0
 | 标签 | 用途 | 示例 |
 |------|------|------|
 | `<p>` | 段落（margin 必须清零） | `<p style="margin:0px">` |
-| `<span>` | 行内文字样式 | `<span style="color:#xxx">` |
+| `<span>` | 行内文字样式 | `<span leaf="" style="color:#xxx">`（**所有文字必须 `<span leaf="">` 包裹**） |
 | `<strong>` | 加粗 | `<strong>文字</strong>` |
 | `<em>` | 斜体 | `<em>文字</em>` |
 | `<br>` | 换行 | `<br/>` |
@@ -76,7 +76,23 @@ max-width: 100% !important;
 
 **无例外**。这是公众号渲染引擎的硬性要求。
 
-### 2.2 `<p>` 标签强制初始化
+### 2.2 `<span leaf="">` 强制包裹（核心铁律）
+
+**所有含中文的文字节点必须用 `<span leaf="">文字</span>` 包裹**，否则粘贴到公众号编辑器后文字样式会大面积丢失。这是从真实粘贴验证中得出的公众号平台行为。
+
+```
+✅ <p style="font-size:14px"><span leaf="">正文内容</span></p>
+❌ <p style="font-size:14px">正文内容</p>
+```
+
+**规则**：
+- 每个 `<p>` / `<span>` / `<strong>` / `<em>` 内的**中文字符**必须处于 `<span leaf="">` 内
+- `leaf=""` 属性值可为空，公众号编辑器识别的是属性名本身
+- 纯英文/数字/符号无 CJK 字符的节点可豁免（但建议统一包裹）
+- 代码块内文字（等宽字体区）可豁免
+- `<br>` 标签无需包裹
+
+### 2.3 `<p>` 标签强制初始化
 
 ```css
 p {
@@ -86,7 +102,7 @@ p {
 }
 ```
 
-### 2.3 所有 CSS 必须内联
+### 2.4 所有 CSS 必须内联
 
 ```
 ✅ <section style="display:flex;padding:10px;...">
@@ -818,10 +834,11 @@ mute: #888          body: #1a1a1a
 1. 每个元素写 `style="box-sizing:border-box;"`
 2. 每个块级元素写 `max-width:100%!important;`
 3. `<p>` 标签写 `margin:0px;padding:0px;`
-4. 所有 transform 带 4 个厂商前缀
-5. 图片使用 `display:block;` 消除底部空隙
-6. 容器之间用 `vertical-align:middle;` 或 `top` 对齐
-7. flex 子元素写 `flex:0 0 auto;`
+4. **所有中文文字节点用 `<span leaf="">文字</span>` 包裹**（否则粘贴后样式丢失）
+5. 所有 transform 带 4 个厂商前缀
+6. 图片使用 `display:block;` 消除底部空隙
+7. 容器之间用 `vertical-align:middle;` 或 `top` 对齐
+8. flex 子元素写 `flex:0 0 auto;`
 
 ### ❌ 禁止做
 
@@ -834,6 +851,7 @@ mute: #888          body: #1a1a1a
 7. transform 只写标准属性不写前缀
 8. 图片不写 `display:block;` 导致底部有缝隙
 9. 用 `<table>` 做布局 — 用 flex
+10. **中文文字不加 `<span leaf="">` 包裹** — 粘贴后样式整片丢失
 
 ---
 

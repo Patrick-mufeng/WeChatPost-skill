@@ -86,7 +86,7 @@ WeChatPost-skill/
 | `wechatpost-write` | re-read draft.md ≥ 500字节 + 含标题候选 + 含正文 |
 | `wechatpost-illustrate` | re-read shot-list.md + 每张 PNG 存在 + final.md 有引用 |
 | `wechatpost-cover` | re-read preview.html + 双版预览 + CSS 内联 |
-| `wechatpost-format` | re-read output.html ≥ 1000字节 + 无禁用标签 + 配图内联 |
+| `wechatpost-format` | re-read output.html ≥ 1000字节 + 跑 `validate_gzh_html.py` 确认 0 ERROR / 0 WARNING + `<span leaf="">` 包裹完整 |
 | `wechatpost-push` | re-read 推送结果：media_id 非空 + 飞书备注已写入 |
 | `wechatpost-publish` | re-read 飞书记录：发布链接/时间/状态 全部写入 |
 
