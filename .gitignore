@@ -44,3 +44,4 @@ skills/lark-*
 # 非 WeChatPost 的遗留文件
 /skills-lock.json
 /.trae/
+.zcode/

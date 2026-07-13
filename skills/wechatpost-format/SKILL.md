@@ -9,77 +9,78 @@ description: "Format Markdown articles to WeChat-compatible HTML. Use when the u
 >
 > 旧模式：AI 读规则 → 按模板转换。新模式：AI 读设计语言 → 理解气质 → 为当前文章原创设计。
 
-## 前置：读设计规范（强制）
+## 前置阅读（强制，逐文件依次读取，不可跳过）
 
-**每次排版前，必须先读取：**
+> ⚠️ **以下 4 个规范文件是生成合规 HTML 的唯一规则来源。SKILL.md 不再提供行内摘要——你必须完整读取每个文件，读完一个再读下一个。不可并行读取，不可跳读。**
 
 ```
-references/design-spec.md     — 公众号 HTML 排版设计规范（平台约束 + 组件模板 + 色彩系统）
-references/theme-index.md     — 6 套主题注册表（单一来源，选择主题用）
-references/common-components.md — 通用组件设计参考（代码块/图片/分割线，跨主题共用）
+按顺序依次读取：
+
+1. references/spec-01-tags.md     — 标签规则与强制 CSS（~110行）
+2. references/spec-02-css.md      — CSS 属性完整白名单（~165行）
+3. references/spec-03-components.md — 布局模式与组件配方（~410行）
+4. references/spec-04-design.md   — 色彩系统与设计指南（~365行）
 ```
 
-**然后根据用户选择的排版方式，读取对应的设计语言文件：**
-- 选 A（预设主题）→ 读 `references/theme-{标识}.md`
-- 选 B（自己描述）→ 跳过，从用户描述推导设计变量
-- 选 C（AI 全原创）→ 跳过，自主定义设计变量
+### 自检：确认已完整读取（读完 4 个文件后必做）
+
+读完 4 个规范文件后，向用户报告以下自检结果，确认没有遗漏：
+
+```
+📋 设计规范阅读自检：
+
+spec-01-tags.md  ✅ 已读
+  → 7 个可用标签：section / p / span / strong / em / img / br
+  → 强制属性：box-sizing:border-box + max-width:100%!important
+  → <span leaf=""> 包裹铁律已确认
+
+spec-02-css.md   ✅ 已读
+  → 5 个最危险的禁用 CSS：position:absolute / animation / calc() / var() / @media
+  → flex 是主力布局，grid 仅用于 SVG 绝对定位
+
+spec-03-components.md ✅ 已读
+  → 4 种安全布局模式：Flex行/列/左右分栏/Grid叠加
+  → 15 个组件模板 + 3 种代码块变体已过目
+
+spec-04-design.md ✅ 已读
+  → 颜色值格式：仅 #hex / rgb() / rgba()
+  → Do's 清单 8 条 + Don'ts 清单 10 条已确认
+  → 头部卡片 4 必须项 + 尾部卡片 3 必须项已确认
+```
+
+**如果任何一项无法确认，说明没有完整读取——回到对应文件重新读。**
 
 ---
 
-## 微信公众号兼容性规则（强制）
+## 微信公众号兼容性规则（核心摘要，设计时对照检查）
 
-公众号编辑器只识别有限标签。违反以下规则会被过滤或样式丢失：
+> 以下为快速对照表。完整规则见上面 4 个 spec 文件——已读过则此处仅用于生成时逐项对照。
 
-### 标签白名单
+### 标签白名单（仅 7 个）
 
-| 标签 | 用途 | 说明 |
+| 标签 | 用途 | 铁律 |
 |------|------|------|
-| `<section>` | 唯一块级容器 | ✅ 允许，嵌套深度无限制 |
-| `<p>` | 段落 | ✅ 允许，**margin 必须清零**：`margin:0px` |
-| `<span>` | 行内样式 | ✅ 允许 |
-| `<strong>` | 加粗 | ✅ 允许 |
-| `<em>` | 斜体 | ✅ 允许 |
-| `<br>` | 换行 | ✅ 允许（使用 `<br/>`） |
-| `<img>` | 图片 | ✅ 允许，必须带 `draggable="false"` |
-| `<svg>` / `<foreignObject>` | SVG 装饰/绝对定位 | ✅ 允许（135 编辑器常用技法） |
-| `<h1~h6>` | 标题 | ❌ **禁用**——用 `<p>` + `font-size` 模拟 |
-| `<div>` | 容器 | ❌ **禁用**——用 `<section>` |
-| `<style>` / `<link>` | 样式 | ❌ **禁用**——全部内联 |
-| `<table>` / `<ul>` / `<ol>` | 列表 | ❌ **禁用**——用 flex 替代 |
-| `<a>` | 链接 | ❌ **禁用**——公众号不支持外链 |
+| `<section>` | 唯一块级容器 | 替代 div |
+| `<p>` | 段落 | `margin:0px` 强制 |
+| `<span>` | 行内文字 | 必须 `<span leaf="">` |
+| `<strong>` | 加粗 | |
+| `<em>` | 斜体 | |
+| `<br>` | 换行 | `<br/>` |
+| `<img>` | 图片 | `draggable="false"` |
 
-### CSS 安全/风险清单
+禁用：div / h1-h6 / table / ul / ol / a / style / link
 
-| 属性 | 状态 | 说明 |
-|------|------|------|
-| `color`, `font-size`, `font-weight`, `line-height`, `letter-spacing` | ✅ 安全 | |
-| `text-align`, `margin`, `padding`, `border`, `border-radius` | ✅ 安全 | |
-| `background-color` (纯色) | ✅ 安全 | 最安全的方式 |
-| `background: linear-gradient(...)` | ✅ 安全 | 多色停止点、rgba 透明度渐变均支持 |
-| `background-image: url(...)` | ✅ 安全 | 外部图片 URL 可加载 |
-| `width`, `max-width`, `height` | ✅ 安全 | `max-width:100%!important` 强制 |
-| `box-sizing: border-box` | ✅ 强制 | 每个元素必须带 |
-| `box-shadow` | ✅ 安全 | `rgba(0,0,0,0.15) 1px 1px 10px` 已验证 |
-| `text-shadow` | ✅ 安全 | 支持多阴影叠加描边效果 |
-| `transform` (rotate/skew/translate) | ✅ 安全 | **必须带 4 个厂商前缀** |
-| `opacity` | ✅ 安全 | |
-| `display: grid` | ✅ 安全 | 用于绝对定位叠加（grid 同单元格） |
-| `<svg>` / `<foreignObject>` | ✅ 安全 | 135 编辑器常用 |
-| `gap` (flex) | ✅ 安全 | |
-| `!important` | ⚠️ 粘贴时可能被剥离 | 检查粘贴后是否保留 |
-| `position: relative/absolute/fixed` | ❌ 禁用 | |
-| `animation` / `transition` / `@keyframes` | ❌ 禁用 | |
-| `calc()` / `vw` / `vh` / `rem` / `var()` | ❌ 禁用 | |
+### 每条元素必带
 
-### 正文排版默认参数
+```css
+box-sizing: border-box;
+max-width: 100% !important;
+```
+
+### 正文默认参数
 
 ```
-字号：14px
-行高：1.85
-颜色：#333（正文）/ #555（辅助）/ #888（最淡）
-段落间距：8px（p 的 margin-bottom）
-两端缩进：0
-```
+字号:14px  行高:1.85  段落间距:8px  letter-spacing:0.3px
 
 ---
 
@@ -195,11 +196,11 @@ C. AI 全原创 — 不套预设，AI 根据文章内容自主设计整套视觉
 
 > ⚠️ **核心思路**：这是**设计创作**而非模板填充。AI 理解设计语言后，为当前文章进行独一无二的排版设计。
 >
-> **开始前必读**：
+> **开始前必读**（前置阅读章节中已读完 4 个 spec 文件，此处仅补充设计语言文件）：
 > 1. **选 A（预设主题）** → 读取对应 `references/theme-{标识}.md`（设计变量+设计原则+组件设计模式+设计策略），同时读取 `references/common-components.md`（代码块/图片/分割线通用参考）
 > 2. **选 B（自己描述）** → 读取 `references/common-components.md`，设计变量从用户描述推导
 > 3. **选 C（AI 全原创）** → 读取 `references/common-components.md`，设计变量完全自主定义
-> 4. **始终遵守** `references/design-spec.md` 的平台约束
+> 4. **平台约束** → 前置阅读已读完 spec-01~04，生成时对照 SKILL.md 中的核心摘要逐项检查
 
 ### 设计流程（每步都是创作，不是复制）
 
